@@ -1,5 +1,5 @@
 # MICROSERVICE
 
-## fronted
+## front-end
 
 (description)

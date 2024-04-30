@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SolveME</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        #header, #footer {
+            background-color: #f0f0f0;
+            padding: 10px;
+            text-align: center;
+        }
+
+        #header {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #logo {
+            display: flex;
+            align-items: center;
+        }
+
+        #system-info {
+            font-size: 12px;
+            color: #666;
+        }
+
+        #main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        #photo {
+            width: 70%;
+            height: 200px;
+            background-color: #ccc;
+            text-align: center;
+            line-height: 200px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #888;
+        }
+
+        #buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div id="header">
+    <div id="logo">
+        <img src="../public/assets/img/small_logo.png" alt="SolveME Logo">
+    </div>
+    <div id="system-info">System Info: Date/Time, Health, etc.</div>
+</div>
+
+<div id="main">
+    <div id="photo">
+        <img src="../public/assets/img/big_logo.png" alt="SolveME Logo">
+    </div>
+
+    <div id="buttons">
+        <button class="button">About</button>
+        <button class="button">Demo</button>
+        <button class="button">Instructions</button>
+    </div>
+</div>
+
+<div id="footer">
+    Footer: SolveME Stuff (Legal, etc.)
+</div>
+</body>
+</html>

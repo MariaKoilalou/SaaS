@@ -1,18 +1,24 @@
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const express = require('express');
+const path = require('path');
+const app = express();
 
-app.use(express.static(path.join(__dirname, 'public')));
+const layout = require('./routes/layout');
+
+// Set EJS as the view engine
 app.set('view engine', 'ejs');
-app.set('views', 'views');
 
-app.use(flash());
+app.use(express.static('public'));
 
-app.use(session({
-    secret: process.env.SECRET_SESSION_STRING,
-    resave: false,
-    saveUninitialized: false,
-    store: new SequelizeStore({
-        db: sequelize,
-        table: 'Sessions',
-    }),
-}));
+// /* Routes used by our project */
+app.use('/', layout);
+
+app.get('/', (req, res) => {
+    res.render('home', { title: 'Home Page' });
+});
+
+app.get('/problems', (req, res) => {
+    res.render('problems', { title: 'Problems Page' });
+});
+
+// Export the Express app
+module.exports = app;
