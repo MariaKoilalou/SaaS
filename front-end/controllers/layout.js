@@ -75,9 +75,6 @@ exports.getHome = (req, res, next) => {
         })
     }
 }
-
-
-
     exports.getAbout = (req, res, next) => {
         res.render('about.ejs', {
             pageTitle: "About Page",
@@ -85,12 +82,12 @@ exports.getHome = (req, res, next) => {
         })
     }
 
-    exports.getDemo = (req, res, next) => {
-        res.render('demo.ejs', {
-            pageTitle: "Demo Page",
-            base_url: process.env.BASE_URL
-        })
-    }
+    // exports.getDemo = (req, res, next) => {
+    //     res.render('demo.ejs', {
+    //         pageTitle: "Demo Page",
+    //         base_url: process.env.BASE_URL
+    //     })
+    // }
 
     exports.getInstructions = (req, res, next) => {
         res.render('instructions.ejs', {
