@@ -2,6 +2,7 @@ const jwt_decode = require('jwt-decode');
 
 exports.getHome = (req, res, next) => {
 
+    // test
     let resultKeywords, resultQsPerDay, isOK = true;
 
     // get service down messages from sessions, because when redirecting messages cant be sent.
