@@ -76,6 +76,8 @@ exports.getHome = (req, res, next) => {
     }
 }
 
+
+
     exports.getAbout = (req, res, next) => {
         res.render('about.ejs', {
             pageTitle: "About Page",
