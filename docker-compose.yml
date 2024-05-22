@@ -1,23 +1,58 @@
 services:
 
-  # Front-end Database
   front_end_db:
     image: postgres:latest
     ports:
-      - "5438:5432"                   # Maps host port 5438 to container port 5432
+      - "5438:5432"
     environment:
-      - POSTGRES_USER=myuser          # Username for the PostgreSQL database
-      - POSTGRES_PASSWORD=mypassword  # Password for the PostgreSQL database
-      - POSTGRES_DB=mydatabase        # Name of the PostgreSQL database
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=mydatabase
 
   browse_problems_db:
     image: postgres:latest
     ports:
-      - "5435:5432"                   # Maps host port 5435 to container port 5432
+      - "5435:5432"
     environment:
-      - POSTGRES_USER=myuser          # Username for the PostgreSQL database
-      - POSTGRES_PASSWORD=mypassword  # Password for the PostgreSQL database
-      - POSTGRES_DB=mydatabase        # Name of the PostgreSQL database
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=mydatabase
+
+  buy_credits_db:
+    image: postgres:latest
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=mydatabase
+
+  problem_stats_db:
+    image: postgres:latest
+    ports:
+      - "5437:5432"
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=mydatabase
+
+  manage_problem_db:
+    image: postgres:latest
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=mydatabase
+
+  submit_problem_db:
+    image: postgres:latest
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=myuser
+      - POSTGRES_PASSWORD=mypassword
+      - POSTGRES_DB=mydatabase
 
   front_end_service:
     build:
@@ -26,17 +61,17 @@ services:
     ports:
       - "4007:4007"
     depends_on:
-      - front_end_db                        # Specify that this service depends on the availability of the front_end_db service
+      - front_end_db
     environment:
-      - DB_HOST=front_end_db         # Hostname or IP address of the front-end database server
-      - DB_PORT=5432                        # Port number on which the front-end database server is listening
-      - DB=mydatabase                       # Name of the front-end database
-      - DB_USER=myuser                      # Username for the front-end database
-      - DB_PASS=mypassword                  # Password for the front-end database
-      - DB_TIMEZONE=UTC                     # Timezone for the front-end database
-      - DB_SCHEMA=myschema                  # Schema name for the front-end database
-      - BASE_URL= http://localhost:4007              # Base URL for the front-end service
-      - SECRET_SESSION_STRING=9a845c30be6838b5ea4db5343a71a234    # Secret ingredient for The Powerpuff Girls
+      - DB_HOST=front_end_db
+      - DB_PORT=5432
+      - DB=mydatabase
+      - DB_USER=myuser
+      - DB_PASS=mypassword
+      - DB_TIMEZONE=UTC
+      - DB_SCHEMA=myschema
+      - BASE_URL= http://localhost:4007
+      - SECRET_SESSION_STRING=9a845c30be6838b5ea4db5343a71a234
 
   browse_problems_service:
     build:
