@@ -4,6 +4,8 @@ const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 const sequelize = require('./utils/database');
 var initModels = require("./models/init-models");
+const flash = require('connect-flash')
+
 const app = express();
 
 const layout = require('./routes/layout');
@@ -15,6 +17,8 @@ app.set('view engine', 'ejs');
 app.set('views', 'views');
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+app.use(flash());
 
 app.use(session({
     secret: process.env.SECRET_SESSION_STRING,

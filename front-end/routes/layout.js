@@ -3,14 +3,12 @@ const layoutController = require('../controllers/layout');
 
 const router = express.Router();
 
-// router.get('/', layoutController.getLanding);
+router.get('/', layoutController.getLanding);
 
-router.get('/home', layoutController.getHome);
-
-router.get('/about', layoutController.getAbout);
-
-router.get('/demo', layoutController.getDemo);
-
-router.get('/instructions', layoutController.getInstructions);
+// router.get('/show_problems', layoutController.getProblems);
+//
+// router.get('/submit_problem', layoutController.postProblem);
+//
+// router.get('/buy_credits', layoutController.getCredits);
 
 module.exports = router;
