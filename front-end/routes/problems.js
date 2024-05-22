@@ -1,8 +1,16 @@
 const express = require('express');
-const problemsController = require('../controllers/layout');
+const problemsController = require('../controllers/problems');
 
 const router = express.Router();
 
-router.get('/show_problems', problemsController.getProblems);
+const router = express.Router();
+
+router.post('/submit', problemsController.submitProblem);
+
+router.get('/show', problemsController.browseProblems);
+
+router.get('/:id', problemsController.showProblem);
+
+router.post('/results/:id', problemsController.resultsProblem);
 
 module.exports = router;
