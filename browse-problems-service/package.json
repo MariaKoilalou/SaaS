@@ -1,8 +1,8 @@
 {
-  "name": "front-end-service",
+  "name": "browse-problems-service",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
     "start": "nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -22,5 +22,4 @@
     "jwt-decode": "^4.0.0",
     "pg": "^8.11.5",
     "sequelize": "^6.37.3"
-  }
-}
+  },
