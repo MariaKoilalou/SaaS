@@ -16,7 +16,7 @@ exports.getLanding = (req, res, next) => {
 
         if (messages.length === 0) messages = [];
 
-        res.render('home.html', {
+        res.render('home.ejs', {
             pageTitle: "Home Page",
             serviceUp: isOK,
             messages: messages,
@@ -26,3 +26,9 @@ exports.getLanding = (req, res, next) => {
     })
 }
 
+exports.getProblems = (req, res, next) => {
+    res.render('show_problems.ejs', {
+        pageTitle: "Show All Projects",
+        base_url: process.env.BASE_URL
+    })
+}
