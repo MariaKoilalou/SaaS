@@ -1,16 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 
-const browseQuestions = require('./routes/browseProblems');
+const browseProblems = require('./routes/browseProblems');
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-
-// /* Routes used by our project */
-app.use('/', layout);
-app.use('/problems', show_questions);
 
 app.use('/', browseProblems);
 

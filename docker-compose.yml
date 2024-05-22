@@ -82,7 +82,7 @@ services:
     depends_on:
       - browse_problems_db
     environment:
-      - DB_HOST=172.19.33.2
+      - DB_HOST=browse_problems_db
       - DB_PORT=5435
       - DB=mydatabase
       - DB_USER=myuser

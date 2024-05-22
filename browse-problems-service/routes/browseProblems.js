@@ -1,6 +1,6 @@
 const express = require('express');
 
-const browseQuestionsController = require('../controllers/browseProblems');
+const browseProblemsController = require('../controllers/browseProblems');
 
 const router = express.Router();
 
