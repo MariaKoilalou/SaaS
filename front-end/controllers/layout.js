@@ -16,7 +16,7 @@ exports.getLanding = (req, res, next) => {
 
         if (messages.length === 0) messages = [];
 
-        res.render('home.ejs', {
+        res.render('home.html', {
             pageTitle: "Home Page",
             serviceUp: isOK,
             messages: messages,
