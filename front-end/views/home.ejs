@@ -1,94 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>SolveME</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>solveMyProblem</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="/assets/css/footer.css">
+    <link rel="stylesheet" href="/assets/css/header.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        #big_logo {
+            width: 40%; /* 60% smaller */
         }
-
-        #header, #footer {
-            background-color: #f0f0f0;
-            padding: 10px;
-            text-align: center;
+        #main-div {
+            padding-top: 120px; /* Ensure the content starts below the fixed header */
+            padding-bottom: 100px; /* Ensure the content is not hidden by the footer */
         }
-
-        #header {
-            display: flex;
-            justify-content: space-between;
+        .hero {
+            background-color: #f8f9fa;
+            padding: 2rem 0;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-
-        #logo {
-            display: flex;
-            align-items: center;
+        .hero img {
+            margin-bottom: 1rem;
         }
-
-        #system-info {
-            font-size: 12px;
-            color: #666;
-        }
-
-        #main {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        #photo {
-            width: 70%;
-            height: 200px;
-            background-color: #ccc;
-            text-align: center;
-            line-height: 200px;
-            margin-bottom: 20px;
-            font-size: 18px;
-            color: #888;
-        }
-
-        #buttons {
-            display: flex;
-            gap: 10px;
-        }
-
-        .button {
-            background-color: #007bff;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
-        .button:hover {
-            background-color: #0056b3;
+        .btn-custom {
+            margin: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            border-radius: 30px;
         }
     </style>
 </head>
 <body>
-<div id="header">
-    <div id="logo">
-        <img src="../public/assets/img/small_logo.png" alt="SolveME Logo">
+<!-- Header with logo and system info -->
+<header>
+    <div class="container">
+        <img id="small_logo" src="/assets/img/small_logo.png" alt="solveME logo" class="img-fluid">
+        <p>System info: date/time, health, etc.</p>
     </div>
-    <div id="system-info">System Info: Date/Time, Health, etc.</div>
+</header>
+
+<div id="main-div" class="container">
+    <!-- Main content area -->
+    <div class="row mb-4 justify-content-center">
+        <div class="col-12 text-center hero">
+            <img id="big_logo" src="/assets/img/big_logo.png" alt="Big solveME logo" class="img-fluid">
+            <h2 class="mt-4">Welcome to solveMyProblem</h2>
+            <p class="lead">Your one-stop solution for all problem-solving needs.</p>
+        </div>
+    </div>
+
+    <!-- Buttons area -->
+    <div class="row mb-4 justify-content-center">
+        <div class="col-auto">
+            <button type="button" class="btn btn-primary btn-custom">Buy credits</button>
+            <button type="button" class="btn btn-secondary btn-custom">Add new submission</button>
+            <button type="button" class="btn btn-success btn-custom">View submissions</button>
+        </div>
+    </div>
 </div>
 
-<div id="main">
-    <div id="photo">
-        <img src="../public/assets/img/big_logo.png" alt="SolveME Logo">
+<!-- Footer -->
+<footer class="footer-basic">
+    <div class="container text-center">
+        <ul class="list-inline">
+            <li class="list-inline-item"><a href="#">Home</a></li>
+            <li class="list-inline-item"><a href="#">Services</a></li>
+            <li class="list-inline-item"><a href="#">About</a></li>
+            <li class="list-inline-item"><a href="#">Terms</a></li>
+            <li class="list-inline-item"><a href="#">Privacy Policy</a></li>
+        </ul>
+        <p class="copyright">Company Name © 2021</p>
     </div>
+</footer>
 
-    <div id="buttons">
-        <button class="button">About</button>
-        <button class="button">Demo</button>
-        <button class="button">Instructions</button>
-    </div>
-</div>
-
-<div id="footer">
-    Footer: SolveME Stuff (Legal, etc.)
-</div>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Optional: <script src="js/scripts.js"></script> -->
 </body>
 </html>

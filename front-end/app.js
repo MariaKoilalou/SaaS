@@ -7,7 +7,8 @@ const layout = require('./routes/layout');
 // Set EJS as the view engine
 app.set('view engine', 'ejs');
 
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
+
 
 // /* Routes used by our project */
 app.use('/', layout);
