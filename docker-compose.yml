@@ -10,6 +10,15 @@ services:
       - POSTGRES_PASSWORD=mypassword  # Password for the PostgreSQL database
       - POSTGRES_DB=mydatabase        # Name of the PostgreSQL database
 
+  browse_problems_db:
+    image: postgres:latest
+    ports:
+      - "5435:5432"                   # Maps host port 5435 to container port 5432
+    environment:
+      - POSTGRES_USER=myuser          # Username for the PostgreSQL database
+      - POSTGRES_PASSWORD=mypassword  # Password for the PostgreSQL database
+      - POSTGRES_DB=mydatabase        # Name of the PostgreSQL database
+
   front_end_service:
     build:
       context: ./front-end
@@ -29,3 +38,21 @@ services:
       - BASE_URL= http://localhost:4007              # Base URL for the front-end service
       - SECRET_SESSION_STRING=9a845c30be6838b5ea4db5343a71a234    # Secret ingredient for The Powerpuff Girls
 
+  browse_problems_service:
+    build:
+      context: ./browse-problems-service
+      dockerfile: Dockerfile
+    ports:
+      - "4003:4003"
+    depends_on:
+      - browse_problems_db
+    environment:
+      - DB_HOST=172.19.33.2
+      - DB_PORT=5435
+      - DB=mydatabase
+      - DB_USER=myuser
+      - DB_PASS=mypassword
+      -  DB_TIMEZONE=UTC
+      - DB_SCHEMA=myschema
+      - BASE_URL=- BASE_URL= http://localhost:4003
+    restart: always

@@ -32,13 +32,13 @@ app.use(session({
 
 // /* Routes used by our project */
 app.use('/', layout);
-app.use('/show_questions', show_questions);
+app.use('/problems', show_questions);
 
 app.get('/', (req, res) => {
     res.render('home', { title: 'Home Page' });
 });
 
-app.get('/show_problems', (req, res) => {
+app.get('/problems', (req, res) => {
     res.render('problems', { title: 'Problems Page' });
 });
 
