@@ -45,15 +45,6 @@ services:
       - POSTGRES_PASSWORD=mypassword
       - POSTGRES_DB=mydatabase
 
-  submit_problem_db:
-    image: postgres:latest
-    ports:
-      - "5433:5432"
-    environment:
-      - POSTGRES_USER=myuser
-      - POSTGRES_PASSWORD=mypassword
-      - POSTGRES_DB=mydatabase
-
   front_end_service:
     build:
       context: ./front-end
@@ -72,6 +63,8 @@ services:
       - DB_SCHEMA=myschema
       - BASE_URL= http://localhost:4007
       - SECRET_SESSION_STRING=9a845c30be6838b5ea4db5343a71a234
+      - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
+      - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
 
   browse_problems_service:
     build:
@@ -87,7 +80,19 @@ services:
       - DB=mydatabase
       - DB_USER=myuser
       - DB_PASS=mypassword
-      -  DB_TIMEZONE=UTC
+      - DB_TIMEZONE=UTC
       - DB_SCHEMA=myschema
       - BASE_URL=- BASE_URL= http://localhost:4003
-    restart: always
+      - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
+      - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
+
+  submit_problem_service:
+    build:
+      context: ./submit-problem-service
+      dockerfile: Dockerfile
+    ports:
+      - "4001:4001"
+    environment:
+      - BASE_URL= http://localhost:4001
+      - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
+      - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234

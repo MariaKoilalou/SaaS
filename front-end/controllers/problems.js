@@ -3,7 +3,7 @@ const encrypt = require('../utils/encrypt');
 
 exports.submitProblem = (req, res, next) => {
 
-    const url_createQuestion = `http://${process.env.BASE_URL}:4001/create`;
+    const url_submitProblem = `http://${process.env.BASE_URL}:4001/create`;
 
     const headers = {
         "CUSTOM-SERVICES-HEADER": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
@@ -12,12 +12,11 @@ exports.submitProblem = (req, res, next) => {
     const data = {
     };
 
-    const config_submitProblem = { method: 'post', url: url_createQuestion, data: data, headers: headers };
+    const config_submitProblem = { method: 'post', url: url_submitProblem, data: data, headers: headers };
 
     let insertKeywords = new Promise((resolve, reject) => {
         axios(config_submitProblem)
             .then(result => {
-                /* Successful creation of a question, show message */
                 req.flash('messages', { type: result.data.type, value: result.data.message })
                 resolve();
             })
@@ -99,8 +98,8 @@ exports.browseProblems = (req, res, next) => {
 
         res.render('show_problems.ejs', {
             pageTitle: "Browse Problems Page",
-            questions: problems,
-            totalQuestions: totalProblems,
+            problems: problems,
+            totalProblems: totalProblems,
             currentPage: pagination.currentPage,
             hasNextPage: pagination.hasNextPage,
             hasPrevPage: pagination.hasPrevPage,
@@ -122,7 +121,7 @@ exports.showProblem = (req, res, next) => {
 
     let problem, pagination, isOK = true, notExist = false;
 
-    const url_browseQuestion = `http://${process.env.BASE_URL}:4002/problems/` + req.params.id;
+    const url_showProblem = `http://${process.env.BASE_URL}:4002/problems/` + req.params.id;
     const page = +req.query.page || 1;
 
     const headers = {

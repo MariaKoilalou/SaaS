@@ -9,7 +9,7 @@ const flash = require('connect-flash')
 const app = express();
 
 const layout = require('./routes/layout');
-const show_questions = require('./routes/problems');
+const problems = require('./routes/problems');
 initModels(sequelize);
 
 // Set EJS as the view engine
@@ -32,7 +32,7 @@ app.use(session({
 
 // /* Routes used by our project */
 app.use('/', layout);
-app.use('/problems', show_questions);
+app.use('/problems', problems);
 
 app.get('/', (req, res) => {
     res.render('home', { title: 'Home Page' });

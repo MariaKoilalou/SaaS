@@ -8,7 +8,7 @@ exports.show = (req, res, next) => {
 
     const page = req.body.pageNumber;
 
-    let questionsArr = [], totalProblems;
+    let problemsArr = [], totalProblems;
 
     let browseProblemsPromise = new Promise((resolve, reject) => {
 
@@ -63,8 +63,8 @@ exports.show = (req, res, next) => {
                 prevPage: page - 1,
                 lastPage: Math.ceil(totalProblems / PROBLEMS_PER_PAGE)
             },
-            totalQuestions: totalProblems,
-            questions: problemsArr
+            totalProblems: totalProblems,
+            problems: problemsArr
         })
     })
         .catch(err => res.status(500).json({ message: 'Internal server error.', type: 'error' }))
