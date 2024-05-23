@@ -17,7 +17,7 @@ sequelize
             })
             .then((result) => {
                 app.listen(port, () => {
-                    console.log(`Browse Problems Service running on port ${port}!`);
+                    console.log(`Buy Credits Service running on port ${port}!`);
                 });
 
             })
