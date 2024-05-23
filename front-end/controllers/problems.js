@@ -93,21 +93,19 @@ exports.browseProblems = (req, res, next) => {
 
         if (messages.length == 0) messages = [];
 
-        if (!isOK) return res.redirect(req.headers.referer);
-        else if (notExist) return res.redirect('/problems/show?page=1');
 
         res.render('browseProblems.ejs', {
-            pageTitle: "Browse Problems Page",
-            problems: problems,
-            totalProblems: totalProblems,
-            currentPage: pagination.currentPage,
-            hasNextPage: pagination.hasNextPage,
-            hasPrevPage: pagination.hasPrevPage,
-            nextPage: pagination.nextPage,
-            prevPage: pagination.prevPage,
-            lastPage: pagination.lastPage,
-            messages: messages,
-            base_url: process.env.BASE_URL
+            // pageTitle: "Browse Problems Page",
+            // problems: problems,
+            // totalProblems: totalProblems,
+            // currentPage: pagination.currentPage,
+            // hasNextPage: pagination.hasNextPage,
+            // hasPrevPage: pagination.hasPrevPage,
+            // nextPage: pagination.nextPage,
+            // prevPage: pagination.prevPage,
+            // lastPage: pagination.lastPage,
+            // messages: messages,
+            // base_url: process.env.BASE_URL
         });
     });
 };
@@ -161,10 +159,6 @@ exports.showProblem = (req, res, next) => {
         messages = serviceDownMessages.length !== 0 ? messages.concat(serviceDownMessages) : messages;
 
         if (messages.length == 0) messages = [];
-
-        if (!isOK) return res.redirect('/problems/show?page=1');
-
-        if (notExist) return res.redirect('/problems/' + req.params.id)
 
         res.render('submission_details.ejs',
             {
@@ -223,7 +217,5 @@ exports.resultsProblem = (req, res, next) => {
 
     resultsProblemPromise.then( () => {
 
-        if (!isOK) return res.redirect('/problems/show?page=1');
-        res.redirect('/problems/' + req.params.id + '?page=' + page) ;
     });
 }
