@@ -2,48 +2,48 @@ services:
 
   front_end_db:
     image: postgres:latest
-    ports:
-      - "5438:5432"
     environment:
       - POSTGRES_USER=myuser
       - POSTGRES_PASSWORD=mypassword
       - POSTGRES_DB=mydatabase
+    networks:
+      - my_network
 
   browse_problems_db:
     image: postgres:latest
-    ports:
-      - "5435:5432"
     environment:
       - POSTGRES_USER=myuser
       - POSTGRES_PASSWORD=mypassword
       - POSTGRES_DB=mydatabase
+    networks:
+      - my_network
 
   buy_credits_db:
     image: postgres:latest
-    ports:
-      - "5434:5432"
     environment:
       - POSTGRES_USER=myuser
       - POSTGRES_PASSWORD=mypassword
       - POSTGRES_DB=mydatabase
+    networks:
+      - my_network
 
   problem_stats_db:
     image: postgres:latest
-    ports:
-      - "5437:5432"
     environment:
       - POSTGRES_USER=myuser
       - POSTGRES_PASSWORD=mypassword
       - POSTGRES_DB=mydatabase
+    networks:
+      - my_network
 
   manage_problem_db:
     image: postgres:latest
-    ports:
-      - "5432:5432"
     environment:
       - POSTGRES_USER=myuser
       - POSTGRES_PASSWORD=mypassword
       - POSTGRES_DB=mydatabase
+    networks:
+      - my_network
 
   front_end_service:
     build:
@@ -54,17 +54,19 @@ services:
     depends_on:
       - front_end_db
     environment:
-      - DB_HOST= 172.19.33.2
-      - DB_PORT5438
+      - DB_HOST=front_end_db
+      - DB_PORT=5432
       - DB=mydatabase
       - DB_USER=myuser
       - DB_PASS=mypassword
       - DB_TIMEZONE=UTC
       - DB_SCHEMA=myschema
-      - BASE_URL=172.19.33.2
+      - BASE_URL=front_end_service
       - SECRET_SESSION_STRING=9a845c30be6838b5ea4db5343a71a234
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
+    networks:
+      - my_network
 
   browse_problems_service:
     build:
@@ -75,16 +77,18 @@ services:
     depends_on:
       - browse_problems_db
     environment:
-      - DB_HOST=172.19.33.2
-      - DB_PORT=5435
+      - DB_HOST=browse_problems_db
+      - DB_PORT=5432
       - DB=mydatabase
       - DB_USER=myuser
       - DB_PASS=mypassword
       - DB_TIMEZONE=UTC
       - DB_SCHEMA=myschema
-      - BASE_URL=172.19.33.2
+      - BASE_URL=browse_problems_service
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
+    networks:
+      - my_network
 
   submit_problem_service:
     build:
@@ -93,6 +97,12 @@ services:
     ports:
       - "4001:4001"
     environment:
-      - BASE_URL=172.19.33.2
+      - BASE_URL=submit_problem_service
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
+    networks:
+      - my_network
+
+networks:
+  my_network:
+    driver: bridge

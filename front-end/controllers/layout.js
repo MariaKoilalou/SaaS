@@ -27,7 +27,7 @@ exports.getLanding = (req, res, next) => {
 }
 
 exports.getProblems = (req, res, next) => {
-    res.render('show_problems.ejs', {
+    res.render('browseProblems.ejs', {
         pageTitle: "Show All Projects",
         base_url: process.env.BASE_URL
     })

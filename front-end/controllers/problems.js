@@ -96,7 +96,7 @@ exports.browseProblems = (req, res, next) => {
         if (!isOK) return res.redirect(req.headers.referer);
         else if (notExist) return res.redirect('/problems/show?page=1');
 
-        res.render('show_problems.ejs', {
+        res.render('browseProblems.ejs', {
             pageTitle: "Browse Problems Page",
             problems: problems,
             totalProblems: totalProblems,
