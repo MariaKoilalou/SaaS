@@ -7,8 +7,4 @@ router.post('/submit', problemsController.submitProblem);
 
 router.get('/show', problemsController.browseProblems);
 
-router.get('/:id', problemsController.showProblem);
-
-router.post('/results/:id', problemsController.resultsProblem);
-
 module.exports = router;

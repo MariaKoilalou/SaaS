@@ -1,221 +1,83 @@
 const axios = require('axios');
 const encrypt = require('../utils/encrypt');
+const sequelize = require('../utils/database');  // Assuming this exports a configured Sequelize instance
+var initModels = require("../models/init-models");
+var models = initModels(sequelize);
 
-exports.submitProblem = (req, res, next) => {
-
-    const url_submitProblem = `http://${process.env.BASE_URL}:4001/create`;
-
+exports.submitProblem = async (req, res) => {
+    const url = `http://${process.env.BASE_URL}:4001/create`;
     const headers = {
-        "CUSTOM-SERVICES-HEADER": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
+        "Content-Type": "application/json",
+        "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
     };
 
-    const data = {
-    };
+    try {
+        const response = await axios.post(url, req.body, { headers });
 
-    const config_submitProblem = { method: 'post', url: url_submitProblem, data: data, headers: headers };
+        // Create or retrieve a session object
+        let userSession = await models.Session.findByPk(req.session.id);
+        if (!userSession) {
+            userSession = new models.Session({id: req.session.id});
+        }
 
-    let insertKeywords = new Promise((resolve, reject) => {
-        axios(config_submitProblem)
-            .then(result => {
-                req.flash('messages', { type: result.data.type, value: result.data.message })
-                resolve();
-            })
-            .catch(err => {
-                /* Service Unavailable */
-                if (err.code === 'ECONNREFUSED') {
-                    isOK = false;
-                    req.flash('messages', { type: 'error', value: 'The service is down. Please try again later.' })
-                }
-                else if (err.response.data.message === 'Validation Error!') {
-                    err.response.data.errors.forEach(error => req.flash('messages', {type: error.type, value: `${error.msg}`}));
-                    return res.redirect(req.headers.referer);
-                }
-                else {
-                    req.flash('messages', { type: err.response.data.type, value: err.response.data.message })
-                }
-                resolve();
-            });
-    });
+        // Update session with new data
+        userSession.data.problemId = response.data.problemId;
+        userSession.update();
 
-    insertKeywords.then(() => res.redirect(req.headers.referer));
-}
-
-exports.browseProblems = (req, res, next) => {
-
-    const serviceDownMessages = req.session.messages || [];
-    if (!req.session.messages) req.session.messages = [];
-
-    if (serviceDownMessages.length !== 0) req.session.messages = [];
-
-    let isOK = true, notExist = false, problems, totalProblems, pagination;
-
-    const url_browseProblems = `http://${process.env.BASE_URL}:4003/show`;
-
-    const page = +req.query.page || 1;
-
-    const headers = {
-        "CUSTOM-SERVICES-HEADER": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
-    };
-
-    const config_browseProblems = { method: 'post', url: url_browseProblems, headers: headers, data: { pageNumber: page } };
-
-    let browseProblemsPromise = new Promise((resolve, reject) => {
-
-        axios(config_browseProblems)
-            /* if result status < 400 */
-            .then(result => {
-                problems = result.data.problems;
-                totalProblems = result.data.totalProblems;
-                pagination = result.data.pagination;
-                resolve();
-            })
-            .catch(err => {
-                if (err.code === 'ECONNREFUSED') {
-                    isOK = false;
-                    req.session.messages = [{ type: 'error', value: 'The service is down. Please try again later.' }];
-                }
-                else {
-                    /* if page does not exist */
-                    if (err.response.status === 404) notExist = true;
-                    else isOK = false;
-                    req.session.messages = [{ type: err.response.data.type, value: err.response.data.message }];
-                }
-                resolve();
-            });
-
-    });
-
-    browseProblemsPromise.then(() => {
-
-        let messages = req.flash("messages");
-
-        messages = serviceDownMessages.length !== 0 ? messages.concat(serviceDownMessages) : messages;
-
-        if (messages.length == 0) messages = [];
-
-
-        res.render('browseProblems.ejs', {
-            // pageTitle: "Browse Problems Page",
-            // problems: problems,
-            // totalProblems: totalProblems,
-            // currentPage: pagination.currentPage,
-            // hasNextPage: pagination.hasNextPage,
-            // hasPrevPage: pagination.hasPrevPage,
-            // nextPage: pagination.nextPage,
-            // prevPage: pagination.prevPage,
-            // lastPage: pagination.lastPage,
-            // messages: messages,
-            // base_url: process.env.BASE_URL
+        res.render('submitProblem.ejs', {
+            message: 'Problem submitted successfully.',
+            problemId: response.data.problemId,
+            details: response.data.details
         });
-    });
+    } catch (error) {
+        console.error('Error submitting problem:', error.message);
+
+        let userSession = await models.Session.findByPk(req.session.id);
+        userSession.data.error = 'Failed to submit problem. Please try again later.';
+        userSession.update();
+
+        res.render('submitProblem.ejs', {
+            error: userSession.data.error
+        });
+    }
 };
 
-exports.showProblem = (req, res, next) => {
-
-    const serviceDownMessages = req.session.messages || [];
-    if (!req.session.messages) req.session.messages = [];
-
-    if (serviceDownMessages.length !== 0) req.session.messages = [];
-
-    let problem, pagination, isOK = true, notExist = false;
-
-    const url_showProblem = `http://${process.env.BASE_URL}:4002/problems/` + req.params.id;
+exports.browseProblems = async (req, res) => {
+    const url = `http://${process.env.BASE_URL}:4003/show`;
     const page = +req.query.page || 1;
 
-    const headers = {
-        "CUSTOM-SERVICES-HEADER": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
-    };
+    try {
+        const response = await axios.post(url, { pageNumber: page }, {
+            headers: {
+                "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
+            }
+        });
 
-    const config_showProblem = { method: 'post', url: url_showProblem, headers: headers, data: { pageNumber: page } };
+        // Update or retrieve session information
+        let userSession = await models.Session.findByPk(req.session.id);
+        if (!userSession) {
+            userSession = new models.Session({id: req.session.id});
+        }
+        userSession.data.lastPageVisited = page;
+        userSession.update();
 
-    let showProblemPromise = new Promise((resolve, reject) => {
+        // Render page with problem data
+        res.render('browseProblems.ejs', {
+            problems: response.data.problems,
+            pagination: response.data.pagination,
+            lastVisited: userSession.data.lastPageVisited // Optional: display last visited page
+        });
+    } catch (error) {
+        console.error('Error browsing problems:', error.message);
 
-        axios(config_showProblem)
-            .then(result => {
-                problem = result.data.problem;
-                pagination = result.data.pagination;
-                resolve();
-            })
-            .catch(err => {
-                if (err.code === 'ECONNREFUSED') {
-                    isOK = false;
-                    req.session.messages = [{ type: 'error', value: 'The service is down. Please try again later.' }];
-                }
-                else {
-                    /* this page does not exist */
-                    if (err.response.status === 404) notExist = true;
-                    else isOK = false;
-                    req.session.messages = [{ type: err.response.data.type, value: err.response.data.message }];
-                }
-                resolve();
-            });
+        let userSession = await models.Session.findByPk(req.session.id);
+        if (!userSession) {
+            userSession = new models.Session({id: req.session.id});
+        }
+        userSession.data.error = 'Error fetching problems. Please try again later.';
+        userSession.update();
 
-    });
-
-    showProblemPromise.then(() => {
-
-        let messages = req.flash("messages");
-
-        messages = serviceDownMessages.length !== 0 ? messages.concat(serviceDownMessages) : messages;
-
-        if (messages.length == 0) messages = [];
-
-        res.render('manageProblems.ejs',
-            {
-                pageTitle: "Problem Details Page",
-                problem: problem,
-                currentPage: pagination.currentPage,
-                hasNextPage: pagination.hasNextPage,
-                hasPrevPage: pagination.hasPrevPage,
-                nextPage: pagination.nextPage,
-                prevPage: pagination.prevPage,
-                lastPage: pagination.lastPage,
-                messages: messages,
-                base_url: process.env.BASE_URL
-            });
-    });
-}
-
-exports.resultsProblem = (req, res, next) => {
-
-    let isOK = true;
-
-    const page = +req.query.page || 1;
-
-    const url_postAnswer = `http://${process.env.BASE_URL}:4002/results/` + req.params.id;
-
-    const data = {
-        problemID: req.params.id,
-        results: req.body.results
-    };
-
-    const headers = {
-        "CUSTOM-SERVICES-HEADER": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
-    };
-
-    const config_postResults = { method: 'post', url: url_postResults, headers: headers, data: data };
-
-    /* Axios request to post an answer */
-    let resultsProblemPromise = new Promise((resolve, reject) => {
-
-        axios(config_postResults)
-            .then(result => {
-                req.flash('messages', { type: result.data.type, value: result.data.message });
-                resolve();
-            })
-            .catch(err => {
-                if (err.code === 'ECONNREFUSED') {
-                    isOK = false;
-                    req.flash('messages', { type: 'error', value: 'The service is down. Please try again later.' });
-                }
-
-                else req.flash('messages', { type: err.response.data.type, value: err.response.data.message });
-
-                resolve();
-            });
-    });
-
-    resultsProblemPromise.then( () => {
-
-    });
-}
+        req.flash('error', userSession.data.error); // Use flash to show the error message
+        res.redirect('/'); // Redirect to a default page on error
+    }
+};

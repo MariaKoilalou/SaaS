@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 
-const manageProblem = require('./routes/stats');
+const stats = require('./routes/stats');
 const app = express();
 
 app.use(express.json());

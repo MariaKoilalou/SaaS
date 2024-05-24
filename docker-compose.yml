@@ -150,7 +150,7 @@ services:
 
   problem_stats_service:
     build:
-      context: .problem-stats-service
+      context: ./problem-stats-service
       dockerfile: Dockerfile
     ports:
       - "4006:4006"

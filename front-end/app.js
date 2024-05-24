@@ -10,6 +10,7 @@ const app = express();
 
 const layout = require('./routes/layout');
 const problems = require('./routes/problems');
+const credits = require('./routes/credits');
 initModels(sequelize);
 
 // Set EJS as the view engine
@@ -33,6 +34,7 @@ app.use(session({
 // /* Routes used by our project */
 app.use('/', layout);
 app.use('/problems', problems);
+app.use('/credits', credits);
 
 app.get('/', (req, res) => {
     res.render('home', { title: 'Home Page' });

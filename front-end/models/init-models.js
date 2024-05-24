@@ -1,11 +1,11 @@
 var DataTypes = require("sequelize").DataTypes;
-var _Sessions = require("./Sessions");
+var _Session = require("./Session");
 
 function initModels(sequelize) {
-    var Sessions = _Sessions(sequelize, DataTypes);
+    var Session = _Session(sequelize, DataTypes);
 
     return {
-        Sessions,
+        Session,
     };
 }
 module.exports = initModels;

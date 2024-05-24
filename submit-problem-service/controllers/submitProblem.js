@@ -1,7 +1,7 @@
 const axios = require('axios');
 const encrypt = require('../utils/encrypt');
 
-module.exports = (req, res, next) => {
+exports.submit = (req, res, next) => {
 
     let validationError = false, errors = [];
 
