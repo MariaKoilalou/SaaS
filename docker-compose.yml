@@ -153,7 +153,7 @@ services:
       context: .problem-stats-service
       dockerfile: Dockerfile
     ports:
-      - "4004:4004"
+      - "4006:4006"
     depends_on:
       - problem_stats_db
     environment:
@@ -167,6 +167,15 @@ services:
       - BASE_URL=problem_stats_service
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
+    networks:
+      - my_network
+
+  ortools_service:
+    build:
+      context: ./ortools-service
+      dockerfile: Dockerfile
+    ports:
+      - "4008:4008"
     networks:
       - my_network
 
