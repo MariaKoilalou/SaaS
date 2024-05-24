@@ -36,7 +36,7 @@ services:
     networks:
       - my_network
 
-  manage_problem_db:
+  manage_problems_db:
     image: postgres:latest
     environment:
       - POSTGRES_USER=myuser
@@ -123,6 +123,50 @@ services:
       - BASE_URL=submit_problem_service
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
+    networks:
+      - my_network
+
+  manage_problems_service:
+    build:
+      context: ./manage-problems-service
+      dockerfile: Dockerfile
+    ports:
+      - "4004:4004"
+    depends_on:
+      - manage_problems_db
+    environment:
+      - DB_HOST=manage_problems_db
+      - DB_PORT=5432
+      - DB=mydatabase
+      - DB_USER=myuser
+      - DB_PASS=mypassword
+      - DB_TIMEZONE=UTC
+      - DB_SCHEMA=myschema
+      - BASE_URL=manage-problems-service
+      - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
+      - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
+    networks:
+      - my_network
+
+  problem_stats_service:
+    build:
+      context: .problem-stats-service
+      dockerfile: Dockerfile
+    ports:
+      - "4004:4004"
+    depends_on:
+      - problem_stats_db
+    environment:
+      - DB_HOST=problem_stats_db
+      - DB_PORT=5432
+      - DB=mydatabase
+      - DB_USER=myuser
+      - DB_PASS=mypassword
+      - DB_TIMEZONE=UTC
+      - DB_SCHEMA=myschema
+      - BASE_URL=problem_stats_service
+      - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
+      - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
     networks:
       - my_network
 

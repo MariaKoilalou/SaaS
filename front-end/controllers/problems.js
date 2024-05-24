@@ -160,7 +160,7 @@ exports.showProblem = (req, res, next) => {
 
         if (messages.length == 0) messages = [];
 
-        res.render('submission_details.ejs',
+        res.render('manageProblems.ejs',
             {
                 pageTitle: "Problem Details Page",
                 problem: problem,

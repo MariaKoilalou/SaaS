@@ -4,7 +4,7 @@ const sequelize = require("./utils/database");
 var initModels = require("./models/init-models");
 var models = initModels(sequelize);
 
-const port = process.env.PORT || 4002;
+const port = process.env.PORT || 4004;
 
 sequelize
     .query(`CREATE SCHEMA IF NOT EXISTS "${process.env.DB_SCHEMA}";`)
@@ -17,7 +17,7 @@ sequelize
             })
             .then((result) => {
                 app.listen(port, () => {
-                    console.log(`Buy Credits Service running on port ${port}!`);
+                    console.log(`Browse Problems Service running on port ${port}!`);
                 });
 
             })
