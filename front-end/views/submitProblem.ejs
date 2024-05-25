@@ -52,22 +52,21 @@
 </header>
 
 <div id="main-div" class="container">
-    <!-- Search Bar -->
-    <div class="search-container">
-        <input type="text" class="search-bar" placeholder="Solver model" id="search-bar">
-    </div>
+    <img id="small_logo" src="/assets/img/small_logo.png" alt="solveME logo" class="img-fluid">
+    <p>System info: date/time, health, etc.</p>
+</div>
+</header>
 
-    <!-- Search List -->
-    <ul class="search-list">
-        <!-- Sample search list item, replace with dynamic content -->
-        <li class="search-item">Model ID: 1 | Title: Sample Model | Notes: This is a sample model</li>
-        <li class="search-item">Model ID: 2 | Title: Another Model | Notes: Another sample model</li>
-        <!-- Add more search list items as needed -->
-    </ul>
+<div id="main-div" class="container">
+    <!-- Form for submitting a problem -->
+    <form action="/problems/submit" method="POST" class="form-container">
+        <input type="text" name="description" class="form-input" placeholder="Describe your problem here..." required>
+        <button type="submit" class="btn btn-primary">Submit Problem</button>
+    </form>
 
     <!-- Message -->
     <div class="message">
-        Select solver model
+        Please describe the problem you want to solve.
     </div>
 </div>
 

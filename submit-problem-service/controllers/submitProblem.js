@@ -1,38 +1,44 @@
 const axios = require('axios');
 const encrypt = require('../utils/encrypt');
 
-exports.submit = (req, res, next) => {
-
-    let validationError = false, errors = [];
-
-    if (validationError) return res.status(400).json({ message: 'Validation Error!', errors: errors })
-
-    // construct data obj that will be sent with axios
-    const data = {
-        type: 'QUESTION CREATE',
-        dateCreated: Date.now(),
+exports.submit = async (req, res) => {
+    // Example of adding simple validation
+    if (!req.body.description || req.body.description.trim() === '') {
+        return res.status(400).json({ message: 'Validation Error!', errors: ['Problem description is required.'] });
     }
 
-    // set the headers (both AUTH and ORIGIN)
-    const headers = {
-        "CUSTOM-SERVICES-HEADER": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
+    // Construct data object that will be sent with axios
+    const data = {
+        type: 'PROBLEM SUBMIT',
+        description: req.body.description,
+        dateCreated: new Date(), // Using JavaScript Date object, formatted by backend if needed
     };
 
-    const config = { method: 'post', headers: headers, data: data };
+    // Set the headers (including encrypted authorization and content type)
+    const headers = {
+        "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
+    };
 
-    // make the request
-    axios(config)
-        .then(result =>
-            res.status(200).json({ message: 'Your problem was submitted successfully.', type: 'success' })
-        )
-        .catch(err =>
-            res.status(500).json({ message: 'Internal server error.', type: 'error' })
-        )
+    try {
+        // Use axios.post directly for cleaner code
+        const response = await axios.post('http://your-target-url/api/problems', data, { headers });
 
-}
+        // Check response status and content
+        if (response.status === 201) {
+            return res.status(200).json({
+                message: 'Your problem was submitted successfully.',
+                type: 'success',
+                problemId: response.data.problemId // Assuming the response contains a problemId
+            });
+        } else {
+            throw new Error('Unexpected response status: ' + response.status);
+        }
+    } catch (err) {
+        console.error('Error when submitting problem:', err.message);
+        return res.status(500).json({
+            message: 'Internal server error. Unable to submit problem.',
+            type: 'error'
+        });
+    }
+};
 
-exports.status = (req, res, next) => {
-    sequelize.authenticate()
-        .then(() => res.status(200).json({ service: 'Submit Problems', status: 'UP', uptime: Math.floor(process.uptime()), database: 'Connection - OK' }))
-        .catch(err => res.status(200).json({ service: 'Submit Problems', status: 'UP', uptime: Math.floor(process.uptime()), database: 'Connection - FAILED' }))
-}
