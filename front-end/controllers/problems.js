@@ -7,7 +7,6 @@ var models = initModels(sequelize);
 exports.submitProblem = async (req, res) => {
     const url = `http://${process.env.BASE_URL}:4001/create`;
     const headers = {
-        "Content-Type": "application/json",
         "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
     };
 

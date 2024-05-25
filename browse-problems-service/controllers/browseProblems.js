@@ -4,57 +4,47 @@ var models = initModels(sequelize);
 
 const PROBLEMS_PER_PAGE = 7;
 
-exports.show = (req, res, next) => {
+exports.show = async (req, res, next) => {
+    const page = parseInt(req.query.pageNumber) || 1;
 
-    const page = req.body.pageNumber;
-
-    let problemsArr = [], totalProblems;
-
-    let browseProblemsPromise = new Promise((resolve, reject) => {
-
-        models.Problems.count().then(numProblems => {
-            totalProblems = numProblems;
-
-            if (totalProblems == 0) return resolve();
-
-            if (page > Math.ceil(totalProblems / PROBLEMS_PER_PAGE)) return res.status(404).json({ message: 'This problems page does not exist.', type: 'error' })
-
-            return models.pROBLEMS.findAll({
-                raw: true,
-                offset: ((page - 1) * PROBLEMS_PER_PAGE),
-                limit: PROBLEMS_PER_PAGE,
-                order: [['dateCreated', 'ASC']]
+    try {
+        const totalProblems = await models.Problems.count();
+        if (totalProblems === 0) {
+            return res.status(200).json({
+                pagination: {
+                    currentPage: page,
+                    hasNextPage: false,
+                    hasPrevPage: false,
+                    nextPage: null,
+                    prevPage: null,
+                    lastPage: 1
+                },
+                totalProblems: totalProblems,
+                problems: []
             });
-        })
-            .then(rows => {
+        }
 
-                if (!rows) return resolve();
+        if (page > Math.ceil(totalProblems / PROBLEMS_PER_PAGE)) {
+            return res.status(404).json({ message: 'This problems page does not exist.', type: 'error' });
+        }
 
-                rows.forEach((row, index) => {
+        const problems = await models.Problems.findAll({
+            offset: (page - 1) * PROBLEMS_PER_PAGE,
+            limit: PROBLEMS_PER_PAGE,
+            order: [['dateCreated', 'ASC']]
+        });
 
-                    let problem = {};
+        const problemsArr = problems.map(problem => ({
+            id: problem.id,
+            title: problem.title,
+            description: problem.description,
+            dateCreated: new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric', minute: 'numeric', day: 'numeric',
+                month: 'long', year: 'numeric', weekday: 'long'
+            }).format(problem.dateCreated)
+        }));
 
-                    dateOptions = { hour: 'numeric', minute: 'numeric', day: 'numeric', month: 'long', year: 'numeric', weekday: 'long' };
-
-                    problem.id = row.id;
-                    problem.title = row.title;
-                    problem.dateCreated = new Intl.DateTimeFormat('en-US', dateOptions).format(row.dateCreated);
-
-                    problemsArr.push(problem);
-
-                    if (index === problemsArr.length - 1) return resolve();
-                })
-
-                return resolve();
-            })
-            .catch(err => res.status(500).json({ message: 'Internal server error.', type: 'error' }));
-    })
-
-
-    /* when all data is retrieved from database send the json with status of 200 */
-    Promise.all([browseProblemsPromise]).then(() => {
-
-        return res.status(200).json({
+        res.status(200).json({
             pagination: {
                 currentPage: page,
                 hasNextPage: PROBLEMS_PER_PAGE * page < totalProblems,
@@ -65,11 +55,13 @@ exports.show = (req, res, next) => {
             },
             totalProblems: totalProblems,
             problems: problemsArr
-        })
-    })
-        .catch(err => res.status(500).json({ message: 'Internal server error.', type: 'error' }))
+        });
+    } catch (err) {
+        console.error('Error fetching problems:', err);
+        res.status(500).json({ message: 'Internal server error.', type: 'error' });
+    }
+};
 
-}
 
 
 exports.status = (req, res, next) => {

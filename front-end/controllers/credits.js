@@ -12,7 +12,6 @@ exports.buyCredits = async (req, res) => {
         const response = await axios.post(url, { amount }, {
             headers: {
                 "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES)),
-                "Content-Type": "application/json"
             }
         });
 
