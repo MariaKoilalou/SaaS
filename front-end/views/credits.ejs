@@ -53,30 +53,22 @@
     </div>
 
     <!-- Labels and Fields area -->
-    <div class="row mb-4 justify-content-center">
-        <div class="col-auto">
-            <div class="form-group mb-3">
-                <label for="current-balance" class="form-label">Current Balance</label>
-                <input type="text" class="form-control" id="current-balance" placeholder="Enter current balance">
-            </div>
-            <div class="form-group mb-3">
-                <label for="new-credits" class="form-label">New Credits</label>
-                <input type="text" class="form-control" id="new-credits" placeholder="Enter new credits">
-            </div>
-            <div class="form-group mb-3">
-                <label for="new-balance" class="form-label">New Balance</label>
-                <input type="text" class="form-control" id="new-balance" placeholder="Enter new balance">
+    <form action="/credits/buy" method="POST">
+        <div class="row mb-4 justify-content-center">
+            <div class="col-auto">
+                <div class="form-group mb-3">
+                    <label for="current-balance" class="form-label">Current Balance</label>
+                    <input type="text" class="form-control" id="current-balance" name="currentBalance" placeholder="Enter current balance" readonly>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="new-credits" class="form-label">New Credits</label>
+                    <input type="text" class="form-control" id="new-credits" name="newCredits" placeholder="Enter new credits">
+                </div>
+                <button type="submit" class="btn btn-success btn-custom">Confirm</button>
+                <button type="button" class="btn btn-secondary btn-custom">Cancel</button>
             </div>
         </div>
-    </div>
-
-    <!-- Buttons area -->
-    <div class="row mb-4 justify-content-center">
-        <div class="col-auto">
-            <button type="button" class="btn btn-success btn-custom">Confirm</button>
-            <button type="button" class="btn btn-secondary btn-custom">Cancel</button>
-        </div>
-    </div>
+    </form>
 </div>
 
 <!-- Footer -->
