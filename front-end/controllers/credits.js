@@ -16,32 +16,42 @@ exports.buyCredits = async (req, res) => {
             }
         });
 
-        // Update or retrieve session information
-        let userSession = await models.Session.find(req.session.id);
+        // Retrieve or initialize session information
+        let userSession = await models.Session.findByPk(req.session.id);
         if (!userSession) {
-            userSession = new models.Session({id: req.session.id, credits: 0}); // Initialize with default credits if not found
+            userSession = await models.Session.create({sid: req.session.id, data: JSON.stringify({credits: 0})});
         }
-        // Assuming the service returns the new credit balance
-        userSession.data.credits = response.data.balance;
-        await userSession.update();
+
+        // Parse existing session data
+        const sessionData = JSON.parse(userSession.data || '{}');
+        sessionData.credits = response.data.balance; // Update credits balance
+
+        // Save updated session data
+        userSession.data = JSON.stringify(sessionData);
+        await userSession.save();
 
         // Render page with confirmation and credit balance
         res.render('credits.ejs', {
             pageTitle: "Credits Purchased",
             message: response.data.message,
-            credits: userSession.data.credits
+            credits: sessionData.credits // Display updated credits balance
         });
     } catch (error) {
         console.error('Error purchasing credits:', error.message);
 
+        // Initialize error session if it does not exist
         let userSession = await models.Session.findByPk(req.session.id);
         if (!userSession) {
-            userSession = new models.Session({id: req.session.id});
+            userSession = await models.Session.create({sid: req.session.id, data: '{}'});
         }
-        userSession.data.error = 'Failed to purchase credits. Please try again later.';
-        await userSession.update();
 
-        req.flash('error', userSession.data.error); // Use flash to show the error message
+        // Update session with error message
+        const sessionData = JSON.parse(userSession.data || '{}');
+        sessionData.error = 'Failed to purchase credits. Please try again later.';
+        userSession.data = JSON.stringify(sessionData);
+        await userSession.save();
+
+        req.flash('error', sessionData.error); // Use flash to show the error message
         res.redirect('/credits/buy'); // Redirect to the buy credits page on error
     }
 };

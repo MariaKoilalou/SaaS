@@ -9,10 +9,11 @@ module.exports = function(sequelize, DataTypes) {
         },
         sessionId: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: false,
+            // Optionally add an index for sessionId if queries by sessionId are frequent
         },
         amount: {
-            type: DataTypes.FLOAT,
+            type: DataTypes.DECIMAL(10, 2),  // Using DECIMAL for currency values to ensure precision
             allowNull: false
         },
         transactionDate: {
@@ -24,14 +25,17 @@ module.exports = function(sequelize, DataTypes) {
         tableName: 'Credits',
         schema: process.env.DB_SCHEMA,
         timestamps: false,
-        indexes: [{
-            name: "Credits_pkey",
-            unique: true,
-            fields: [
-                {name: "id"},
-            ]
-        },]
+        indexes: [
+            {
+                name: "Credits_pkey",
+                unique: true,
+                fields: ["id"],
+            },
+            {
+                name: "idx_sessionId",  // Additional index for sessionId
+                fields: ["sessionId"],
+            },
+        ]
     });
-
-
 };
+

@@ -1,6 +1,7 @@
 const Sequelize = require('sequelize');
+
 module.exports = function(sequelize, DataTypes) {
-    return sequelize.define('Sessions', {
+    return sequelize.define('Session', {
         sid: {
             type: DataTypes.TEXT,
             allowNull: false,
@@ -12,16 +13,23 @@ module.exports = function(sequelize, DataTypes) {
         },
         data: {
             type: DataTypes.TEXT,
-            allowNull: true
+            allowNull: true,
+            get() {
+                const rawData = this.getDataValue('data');
+                return rawData ? JSON.parse(rawData) : {}; // Parse the text back into JSON
+            },
+            set(value) {
+                this.setDataValue('data', JSON.stringify(value)); // Convert JSON to text when saving
+            }
         }
     }, {
         sequelize,
-        tableName: 'Sessions',
-        schema: process.env.DB_SCHEMA,
+        tableName: 'Session',
+        schema: process.env.DB_SCHEMA, // Ensure your DB schema is set correctly in environment variables
         timestamps: false,
         indexes: [
             {
-                name: "Sessions_pkey",
+                name: "Session_pkey",
                 unique: true,
                 fields: [
                     { name: "sid" },
@@ -30,3 +38,4 @@ module.exports = function(sequelize, DataTypes) {
         ]
     });
 };
+

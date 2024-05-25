@@ -27,8 +27,11 @@ app.use(session({
     saveUninitialized: false,
     store: new SequelizeStore({
         db: sequelize,
-        table: 'Sessions',
+        table: 'Session',
     }),
+    cookie: {
+        maxAge: 24 * 60 * 60 * 1000  // 24 hours
+    }
 }));
 
 // /* Routes used by our project */

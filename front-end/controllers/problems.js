@@ -15,14 +15,15 @@ exports.submitProblem = async (req, res) => {
         const response = await axios.post(url, req.body, { headers });
 
         // Create or retrieve a session object
-        let userSession = await models.Session.findByPk(req.session.id);
+        let userSession = await models.Session.findByPk(req.session.id || 'defaultSessionId');
         if (!userSession) {
-            userSession = new models.Session({id: req.session.id});
+            userSession = models.Session.build({sid: req.session.id});
+            req.session.save(); // Ensure session is saved
         }
 
-        // Update session with new data
-        userSession.data.problemId = response.data.problemId;
-        userSession.update();
+        // Serialize session data correctly before saving
+        userSession.data = JSON.stringify({problemId: response.data.problemId});
+        await userSession.save();
 
         res.render('submitProblem.ejs', {
             message: 'Problem submitted successfully.',
@@ -32,12 +33,8 @@ exports.submitProblem = async (req, res) => {
     } catch (error) {
         console.error('Error submitting problem:', error.message);
 
-        let userSession = await models.Session.findByPk(req.session.id);
-        userSession.data.error = 'Failed to submit problem. Please try again later.';
-        userSession.update();
-
         res.render('submitProblem.ejs', {
-            error: userSession.data.error
+            error: 'Failed to submit problem. Please try again later.'
         });
     }
 };
@@ -54,30 +51,26 @@ exports.browseProblems = async (req, res) => {
         });
 
         // Update or retrieve session information
-        let userSession = await models.Session.findByPk(req.session.id);
+        let userSession = await models.Session.findByPk(req.session.id || 'defaultSessionId');
         if (!userSession) {
-            userSession = new models.Session({id: req.session.id});
+            userSession = models.Session.build({sid: req.session.id});
+            req.session.save(); // Ensure session is saved
         }
-        userSession.data.lastPageVisited = page;
-        userSession.update();
+
+        // Serialize session data correctly before saving
+        userSession.data = JSON.stringify({lastPageVisited: page});
+        await userSession.save();
 
         // Render page with problem data
         res.render('browseProblems.ejs', {
             problems: response.data.problems,
             pagination: response.data.pagination,
-            lastVisited: userSession.data.lastPageVisited // Optional: display last visited page
+            lastVisited: page // Show last visited page
         });
     } catch (error) {
         console.error('Error browsing problems:', error.message);
 
-        let userSession = await models.Session.findByPk(req.session.id);
-        if (!userSession) {
-            userSession = new models.Session({id: req.session.id});
-        }
-        userSession.data.error = 'Error fetching problems. Please try again later.';
-        userSession.update();
-
-        req.flash('error', userSession.data.error); // Use flash to show the error message
+        req.flash('error', 'Error fetching problems. Please try again later.');
         res.redirect('/'); // Redirect to a default page on error
     }
 };
