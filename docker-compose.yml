@@ -67,6 +67,7 @@ services:
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
     networks:
       - my_network
+    restart: always
 
   browse_problems_service:
     build:
@@ -89,6 +90,7 @@ services:
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
     networks:
       - my_network
+    restart: always
 
   buy_credits_service:
     build:
@@ -111,6 +113,7 @@ services:
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
     networks:
       - my_network
+    restart: always
 
 
   submit_problem_service:
@@ -125,6 +128,7 @@ services:
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
     networks:
       - my_network
+    restart: always
 
   manage_problems_service:
     build:
@@ -147,6 +151,7 @@ services:
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
     networks:
       - my_network
+    restart: always
 
   problem_stats_service:
     build:
@@ -169,6 +174,7 @@ services:
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
     networks:
       - my_network
+    restart: always
 
   ortools_service:
     build:
@@ -178,6 +184,7 @@ services:
       - "4008:4008"
     networks:
       - my_network
+    restart: always
 
 networks:
   my_network:

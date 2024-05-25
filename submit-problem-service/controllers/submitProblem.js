@@ -30,9 +30,3 @@ exports.submit = (req, res, next) => {
         )
 
 }
-
-exports.status = (req, res, next) => {
-    sequelize.authenticate()
-        .then(() => res.status(200).json({ service: 'Submit Problems', status: 'UP', uptime: Math.floor(process.uptime()), database: 'Connection - OK' }))
-        .catch(err => res.status(200).json({ service: 'Submit Problems', status: 'UP', uptime: Math.floor(process.uptime()), database: 'Connection - FAILED' }))
-}

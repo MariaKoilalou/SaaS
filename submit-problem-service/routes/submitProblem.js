@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.post('/submit', submitProblemController.submit);
 
-router.get('/status', submitProblemController.status);
+// router.get('/status', submitProblemController.status);
 
 module.exports = router;
