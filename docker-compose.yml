@@ -7,7 +7,7 @@ services:
       - ./nginx.conf:./nginx-service/nginx.conf
       - ./default.conf:./nginx-service/default.conf
     networks:
-      - my-network
+      - my_network
     depends_on:
       - front_end_service
       - submit_problem_service

@@ -43,8 +43,5 @@ app.get('/', (req, res) => {
     res.render('home', { title: 'Home Page' });
 });
 
-app.get('/credits', (req, res) => {
-    res.render('credits', { title: 'Credits Page' });
-});
 // Export the Express app
 module.exports = app;
