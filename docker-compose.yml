@@ -1,4 +1,18 @@
 services:
+  nginx_service:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:./nginx-service/nginx.conf
+      - ./default.conf:./nginx-service/default.conf
+    networks:
+      - my-network
+    depends_on:
+      - front_end_service
+      - submit_problem_service
+      - browse_problems_service
+      - buy_credits_service
 
   front_end_db:
     image: postgres:latest
