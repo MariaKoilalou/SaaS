@@ -2,12 +2,9 @@ services:
   nginx_service:
     image: nginx:latest
     ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:./nginx-service/nginx.conf
-      - ./default.conf:./nginx-service/default.conf
+      - "4000:4000"
     networks:
-      - my-network
+      - my_network
     depends_on:
       - front_end_service
       - submit_problem_service
