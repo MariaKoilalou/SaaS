@@ -27,13 +27,15 @@ exports.submitProblem = async (req, res) => {
         res.render('submitProblem.ejs', {
             message: 'Problem submitted successfully.',
             problemId: response.data.problemId,
-            details: response.data.details
+            details: response.data.details,
+            description: req.body.description
         });
     } catch (error) {
         console.error('Error submitting problem:', error.message);
 
         res.render('submitProblem.ejs', {
             error: 'Failed to submit problem. Please try again later.'
+
         });
     }
 };
