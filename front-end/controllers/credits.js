@@ -4,8 +4,9 @@ const sequelize = require('../utils/database'); // Assuming this exports a confi
 var initModels = require("../models/init-models");
 var models = initModels(sequelize);
 
-exports.checkCredits = async (req, res) => {
-    const url = `http://${process.env.BASE_URL}:4002/check-credits`; // Adjusted endpoint for checking credits
+
+exports.buyCredits = async (req, res) => {
+    const url = `http://${process.env.BASE_URL}:4002/buy`; // Assuming BASE_URL is set to the service host
 
     try {
         const response = await axios.get(url, {
