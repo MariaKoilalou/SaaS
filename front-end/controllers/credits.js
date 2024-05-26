@@ -6,7 +6,6 @@ var models = initModels(sequelize);
 
 exports.buyCredits = async (req, res) => {
     const url = `http://${process.env.BASE_URL}:4002/buy`; // Assuming BASE_URL is set to the service host
-    const amount = req.body.amount; // Amount to buy from the form input
 
     try {
         const response = await axios.post(url, { amount }, {
