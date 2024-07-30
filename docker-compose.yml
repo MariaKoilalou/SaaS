@@ -126,7 +126,6 @@ services:
       - my_network
     restart: always
 
-
   submit_problem_service:
     build:
       context: ./submit-problem-service
@@ -157,7 +156,7 @@ services:
       - DB_PASS=mypassword
       - DB_TIMEZONE=UTC
       - DB_SCHEMA=myschema
-      - BASE_URL=manage-problems-service
+      - BASE_URL=manage_problems_service
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
     networks:

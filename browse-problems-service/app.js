@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const validateSession = require('./middleware/validateSession');
 
 const browseProblems = require('./routes/browseProblems');
 const app = express();
@@ -7,6 +8,8 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
+// Use session validation middleware
+app.use(validateSession);
 
 app.use('/', browseProblems);
 

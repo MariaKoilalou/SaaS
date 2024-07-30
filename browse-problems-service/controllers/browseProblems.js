@@ -4,11 +4,13 @@ var models = initModels(sequelize);
 
 const PROBLEMS_PER_PAGE = 7;
 
-exports.show = async (req, res, next) => {
+exports.show = async (req, res) => {
     const page = parseInt(req.query.pageNumber) || 1;
 
     try {
-        const totalProblems = await models.Problems.count();
+        // Count the total number of problems
+        const totalProblems = await models.Problem.count();
+
         if (totalProblems === 0) {
             return res.status(200).json({
                 pagination: {
@@ -24,26 +26,40 @@ exports.show = async (req, res, next) => {
             });
         }
 
-        if (page > Math.ceil(totalProblems / PROBLEMS_PER_PAGE)) {
+        const totalPages = Math.ceil(totalProblems / PROBLEMS_PER_PAGE);
+        if (page > totalPages) {
             return res.status(404).json({ message: 'This problems page does not exist.', type: 'error' });
         }
 
-        const problems = await models.Problems.findAll({
+        // Fetch the problems for the current page
+        const problems = await models.Problem.findAll({
             offset: (page - 1) * PROBLEMS_PER_PAGE,
             limit: PROBLEMS_PER_PAGE,
             order: [['dateCreated', 'ASC']]
         });
 
-        const problemsArr = problems.map(problem => ({
-            id: problem.id,
-            title: problem.title,
-            description: problem.description,
-            dateCreated: new Intl.DateTimeFormat('en-US', {
-                hour: 'numeric', minute: 'numeric', day: 'numeric',
-                month: 'long', year: 'numeric', weekday: 'long'
-            })
-        }));
+        // Log the retrieved problems for debugging
+        console.log('Fetched problems:', problems);
 
+        // Format the problems array
+        const problemsArr = problems.map(problem => {
+            console.log('Problem:', problem);  // Debug log for each problem
+            return {
+                id: problem.id,
+                title: problem.title,
+                description: problem.description,
+                dateCreated: new Intl.DateTimeFormat('en-US', {
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    weekday: 'long'
+                }).format(new Date(problem.dateCreated))
+            };
+        });
+
+        // Respond with the paginated problems
         res.status(200).json({
             pagination: {
                 currentPage: page,
@@ -51,7 +67,7 @@ exports.show = async (req, res, next) => {
                 hasPrevPage: page > 1,
                 nextPage: page + 1,
                 prevPage: page - 1,
-                lastPage: Math.ceil(totalProblems / PROBLEMS_PER_PAGE)
+                lastPage: totalPages
             },
             totalProblems: totalProblems,
             problems: problemsArr
@@ -63,9 +79,3 @@ exports.show = async (req, res, next) => {
 };
 
 
-
-exports.status = (req, res, next) => {
-    sequelize.authenticate()
-        .then(() => res.status(200).json({ service: 'Browse Problems', status: 'UP', uptime: Math.floor(process.uptime()), database: 'Connection - OK' }))
-        .catch(err => res.status(200).json({ service: 'Browse Problems', status: 'UP', uptime: Math.floor(process.uptime()), database: 'Connection - FAILED' }))
-}

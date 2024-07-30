@@ -5,9 +5,10 @@ var initModels = require("../models/init-models");
 var models = initModels(sequelize);
 
 exports.submitProblem = async (req, res) => {
-    const url = `http://${process.env.BASE_URL}:4001/create`;
+    const url = `http://submit_problem_service:4001/submit`;
     const headers = {
-        "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
+        "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES)),
+        "Content-Type": "application/json"
     };
 
     try {
@@ -39,30 +40,31 @@ exports.submitProblem = async (req, res) => {
         });
     }
 };
-
 exports.browseProblems = async (req, res) => {
-    const url = `http://${process.env.BASE_URL}:4003/show`;
+    const url = `http://browse_problems_service:4003/show`;
     const page = +req.query.page || 1;
 
     try {
         const response = await axios.post(url, { pageNumber: page }, {
             headers: {
-                "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
+                "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES)),
+                "Content-Type": "application/json"
             }
         });
 
-        // Update or retrieve session information
-        let userSession = await models.Session.findByPk(req.session.id || 'defaultSessionId');
+        // Check if session exists and create if necessary
+        let userSession = await models.Session.findByPk(req.sessionID);
         if (!userSession) {
-            userSession = models.Session.build({sid: req.session.id});
-            req.session.save(); // Ensure session is saved
+            userSession = models.Session.build({ sid: req.sessionID, data: JSON.stringify({}) });
         }
 
-        // Serialize session data correctly before saving
-        userSession.data = JSON.stringify({lastPageVisited: page});
+        // Update session data
+        const sessionData = JSON.parse(userSession.data || '{}');
+        sessionData.lastPageVisited = page;
+        userSession.data = JSON.stringify(sessionData);
         await userSession.save();
 
-        // Render page with problem data
+        // Render the page with problem data
         res.render('browseProblems.ejs', {
             problems: response.data.problems,
             pagination: response.data.pagination,
