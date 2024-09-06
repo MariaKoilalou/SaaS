@@ -1,39 +1,42 @@
-const Sequelize = require('sequelize');
-
 module.exports = function(sequelize, DataTypes) {
-    return sequelize.define('Credits', {
-        id: {
-            type: DataTypes.INTEGER,
-            autoIncrement: true,
+    return sequelize.define('Session', {
+        sid: {
+            type: DataTypes.TEXT,
+            allowNull: false,
             primaryKey: true
         },
-        sessionId: {
-            type: DataTypes.STRING,
-            allowNull: false,
-            // Optionally add an index for sessionId if queries by sessionId are frequent
+        expire: {
+            type: DataTypes.ARRAY(DataTypes.DATE),
+            allowNull: true
         },
-        amount: {
-            type: DataTypes.DECIMAL(10, 2),  // Using DECIMAL for currency values to ensure precision
-            allowNull: false
-        },
-        transactionDate: {
-            type: DataTypes.DATE,
-            defaultValue: DataTypes.NOW
+        data: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            get() {
+                const rawData = this.getDataValue('data');
+                // Initialize session data with a balance of 0 if it doesn't exist
+                const parsedData = rawData ? JSON.parse(rawData) : {};
+                if (!parsedData.balance) {
+                    parsedData.balance = 0; // Default balance
+                }
+                return parsedData;
+            },
+            set(value) {
+                this.setDataValue('data', JSON.stringify(value)); // Convert JSON to text when saving
+            }
         }
     }, {
         sequelize,
-        tableName: 'Credits',
+        tableName: 'Session',
         schema: process.env.DB_SCHEMA,
         timestamps: false,
         indexes: [
             {
-                name: "Credits_pkey",
+                name: "Session_pkey",
                 unique: true,
-                fields: ["id"],
-            },
-            {
-                name: "idx_sessionId",  // Additional index for sessionId
-                fields: ["sessionId"],
+                fields: [
+                    { name: "sid" },
+                ]
             },
         ]
     });

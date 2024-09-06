@@ -1,10 +1,12 @@
 var DataTypes = require("sequelize").DataTypes;
-var _Credits = require("./Credits");
+var _Session = require("./Session");
 
 function initModels(sequelize) {
-    var Credits = _Credits(sequelize, DataTypes);
+    var Session = _Session(sequelize, DataTypes);
 
-    return { Credits };
+    return {
+        Session,
+    };
 }
 module.exports = initModels;
 module.exports.initModels = initModels;

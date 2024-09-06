@@ -16,7 +16,8 @@ exports.submit = async (req, res) => {
 
     // Set the headers (including encrypted authorization and content type)
     const headers = {
-        "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES))
+        "Custom-Services-Header": encrypt(process.env.SECRET_STRING_SERVICES),
+        "Content-Type": "application/json"
     };
 
     try {

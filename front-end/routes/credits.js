@@ -3,6 +3,8 @@ const creditsController = require('../controllers/credits');
 
 const router = express.Router();
 
-router.get('/buy', creditsController.buyCredits);
+router.post('/buy', creditsController.buyCredits);
+
+router.get('/', creditsController.layout);
 
 module.exports = router;

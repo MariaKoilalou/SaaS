@@ -1,74 +1,60 @@
-const sequelize = require('../utils/database');  // Assuming this exports a configured Sequelize instance
+const axios = require('axios');
+const encrypt = require('../utils/encrypt'); // Assuming encrypt is a utility function you've created
+const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
 var initModels = require("../models/init-models");
 var models = initModels(sequelize);
+const session = require('express-session');
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
-exports.buyCredits = async (req, res) => {
-    const { sessionId, amount } = req.body;
+exports.buy = async (req, res) => {
+    const creditsToAdd = req.body.credits;
+    const sessionId = req.body.sessionId;
 
-    // Validate input
-    if (!sessionId || amount <= 0) {
-        return res.status(400).json({ success: false, message: 'Invalid session ID or amount' });
-    }
-
-    try {
-        // Create a new credit transaction record
-        const credit = await models.Credits.create({
-            sessionId: sessionId,
-            amount: amount,
-            transactionDate: new Date() // explicitly set the transaction date
-        });
-
-        // Respond with success
-        res.status(201).json({
-            success: true,
-            message: 'Credits purchased successfully',
-            transactionId: credit.id, // provide transaction ID for reference
-            amount: credit.amount,
-            transactionDate: credit.transactionDate
-        });
-    } catch (err) {
-        console.error('Error buying credits:', err);
-        res.status(500).json({
-            success: false,
-            message: 'Error buying credits',
-            error: err.message
-        });
-    }
-};
-
-
-
-exports.totalCredits = async (req, res) => {
-    const { sessionId } = req.query;
-
-    if (!sessionId) {
-        return res.status(400).json({ success: false, message: 'Session ID is required' });
-    }
+    console.log('buy: Received request. Session ID:', sessionId, 'Credits to add:', creditsToAdd);
 
     try {
-        // Calculate the sum of all credit amounts for the given session ID
-        const total = await models.Credits.sum('amount', {
-            where: { sessionId: sessionId }
-        });
+        // Override session ID with the provided one
+        req.sessionID = sessionId;  // Use the session ID passed from the frontend
 
-        res.json({
-            success: true,
-            sessionId: sessionId,
-            totalCredits: total || 0 // Return 0 if no credits found
+        // Retrieve session data using the session ID
+        req.sessionStore.get(sessionId, (err, sessionData) => {
+            if (err) {
+                console.error('Error fetching session:', err);
+                return res.status(500).json({ message: 'Failed to retrieve session.' });
+            }
+
+            // Step 2: If session doesn't exist, create a new session with the same session ID
+            if (!sessionData) {
+                console.log('Session not found, creating a new one for session ID:', sessionId);
+                sessionData = {
+                    balance: 0  // Initialize with zero balance
+                };
+            }
+
+            const currentBalance = Number(sessionData.balance) || 0;  // Ensure balance is a number
+            const creditsToAddNum = Number(creditsToAdd);  // Ensure creditsToAdd is a number
+            const newBalance = currentBalance + creditsToAddNum;
+            sessionData.balance = newBalance;  // Store the updated balance as a number
+
+            // Save the updated session data
+            req.sessionStore.set(req.sessionID, sessionData, (saveErr) => {
+                if (saveErr) {
+                    console.error('Error saving session:', saveErr);
+                    return res.status(500).json({ message: 'Failed to save session.' });
+                }
+
+                console.log('buy: Updated session balance saved. New Balance:', newBalance);
+                return res.status(200).json({
+                    message: 'Credits added successfully.',
+                    creditsAdded: creditsToAdd,
+                    newBalance: newBalance
+                });
+            });
         });
-    } catch (err) {
-        console.error('Error fetching total credits:', err);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching total credits',
-            error: err.message
+    } catch (error) {
+        console.error('buy: Error adding credits:', error);
+        return res.status(500).json({
+            message: 'Internal server error. Failed to add credits.'
         });
     }
-};
-
-
-exports.status = (req, res, next) => {
-    sequelize.authenticate()
-        .then(() => res.status(200).json({ service: 'Credits Service', status: 'UP', uptime: Math.floor(process.uptime()), database: 'Connection - OK' }))
-        .catch(err => res.status(500).json({ service: 'Credits Service', status: 'DOWN', uptime: Math.floor(process.uptime()), database: 'Connection - FAILED', error: err.message }));
 };

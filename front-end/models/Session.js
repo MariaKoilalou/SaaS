@@ -1,5 +1,3 @@
-const Sequelize = require('sequelize');
-
 module.exports = function(sequelize, DataTypes) {
     return sequelize.define('Session', {
         sid: {
@@ -16,7 +14,12 @@ module.exports = function(sequelize, DataTypes) {
             allowNull: true,
             get() {
                 const rawData = this.getDataValue('data');
-                return rawData ? JSON.parse(rawData) : {}; // Parse the text back into JSON
+                // Initialize session data with a balance of 0 if it doesn't exist
+                const parsedData = rawData ? JSON.parse(rawData) : {};
+                if (!parsedData.balance) {
+                    parsedData.balance = 0; // Default balance
+                }
+                return parsedData;
             },
             set(value) {
                 this.setDataValue('data', JSON.stringify(value)); // Convert JSON to text when saving
@@ -25,7 +28,7 @@ module.exports = function(sequelize, DataTypes) {
     }, {
         sequelize,
         tableName: 'Session',
-        schema: process.env.DB_SCHEMA, // Ensure your DB schema is set correctly in environment variables
+        schema: process.env.DB_SCHEMA,
         timestamps: false,
         indexes: [
             {
@@ -38,4 +41,5 @@ module.exports = function(sequelize, DataTypes) {
         ]
     });
 };
+
 

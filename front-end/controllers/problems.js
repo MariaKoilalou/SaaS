@@ -7,8 +7,9 @@ var models = initModels(sequelize);
 exports.submitProblem = async (req, res) => {
     const url = `http://submit_problem_service:4001/submit`;
     const headers = {
-        "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES)),
-        "Content-Type": "application/json"
+        "Custom-Services-Header": encrypt(process.env.SECRET_STRING_SERVICES),
+        "Content-Type": "application/json",
+        "Session-ID": req.session.id,
     };
 
     try {
@@ -32,6 +33,9 @@ exports.submitProblem = async (req, res) => {
             description: req.body.description
         });
     } catch (error) {
+        console.error('Error response data:', error.response ? error.response.data : 'No response data');
+        console.error('Error response headers:', error.response ? error.response.headers : 'No response headers');
+
         console.error('Error submitting problem:', error.message);
 
         res.render('submitProblem.ejs', {
