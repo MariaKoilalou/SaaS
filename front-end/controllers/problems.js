@@ -1,63 +1,61 @@
 const axios = require('axios');
-const encrypt = require('../utils/encrypt'); // Assuming encrypt is a utility function you've created
 const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
-const fs = require('fs');
-const FormData = require('form-data');
 var initModels = require("../models/init-models");
 var models = initModels(sequelize);
 const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
-const multer = require('multer');
 
-// Configure multer to store files in memory
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-
-exports.uploadFile = upload.single('pythonFile');  // 'pythonFile' is the field name for file input in the form
-
+// Handle both rendering the form and submitting the problem
 exports.submitProblem = async (req, res) => {
     const url = `http://submit_problem_service:4001/submit`;
 
-    // Ensure the file is provided in the request
-    if (!req.file) {
-        return res.status(400).json({ message: 'No file provided. Please upload a .py file.' });
+    // If no problem data has been posted, render the form
+    if (!req.body.problemData) {
+        return res.render('submitProblem', {
+            error: null, // No error initially
+            message: null // No success message initially
+        });
     }
 
+    // If form data exists, handle the submission logic
     try {
-        // Prepare the form data to send the Python file in memory
-        const formData = new FormData();
-        formData.append('pythonFile', req.file.buffer, {
-            filename: req.file.originalname,  // Original file name
-            contentType: req.file.mimetype    // File MIME type
-        });
+        const { problemData, problemType } = req.body;
 
-
-        // Add session ID if required
-        if (req.session && req.session.id) {
-            formData.append('sessionId', req.session.id);  // Attach session ID if available
+        // Check session balance
+        const sessionBalance = req.session.balance;
+        if (sessionBalance <= 0) {
+            return res.render('submitProblem', {
+                sessionBalance: req.session.balance || 0,
+                error: 'Insufficient balance in session to submit the problem.',
+                message: null
+            });
         }
 
-        // Make a POST request to the Submit Problem microservice without waiting for a response
-        axios.post(url, formData, {
-            headers: {
-                "Custom-Services-Header": encrypt(process.env.SECRET_STRING_SERVICES),  // Optional: Add custom header
-                ...formData.getHeaders()  // Set appropriate headers for multipart/form-data
-            }
-        }).then((response) => {
-            console.log('Problem submitted successfully:', response.data);
-        }).catch((error) => {
-            console.error('Error submitting problem:', error.message);
+        // Prepare the payload for the problem microservice
+        const payload = {
+            problem: problemData,
+            sessionId: req.session.id,
+        };
+
+        // Make a request to the submit problem microservice
+        const response = await axios.post(url, payload);
+
+        // Deduct balance after successful submission
+        req.session.balance -= 1;
+        await req.session.save(); // Save the updated session balance
+
+        return res.render('submitProblem', {
+            sessionBalance: req.session.balance || 0,
+            error: null,
+            message: 'Problem submitted successfully!'
         });
 
-
     } catch (error) {
-        console.error('Error response data:', error.response ? error.response.data : 'No response data');
         console.error('Error submitting problem:', error.message);
-
-        // Handle errors gracefully
-        return res.status(500).json({
-            message: 'Internal server error. Unable to submit problem.',
-            error: error.message
+        return res.render('submitProblem', {
+            sessionBalance: req.session.balance || 0,
+            error: 'Internal server error. Unable to submit problem.',
+            message: null
         });
     }
 };
@@ -65,38 +63,22 @@ exports.submitProblem = async (req, res) => {
 
 exports.browseProblems = async (req, res) => {
     const url = `http://browse_problems_service:4003/show`;
-    const page = +req.query.page || 1;
 
     try {
-        const response = await axios.post(url, { pageNumber: page }, {
-            headers: {
-                "Custom-Services-Header": JSON.stringify(encrypt(process.env.SECRET_STRING_SERVICES)),
-                "Content-Type": "application/json"
-            }
+        // Send a POST request to fetch problems associated with this sessionId
+        const response = await axios.post(url, {
+            sessionId: req.session.id
         });
-
-        // Check if session exists and create if necessary
-        let userSession = await models.Session.findByPk(req.sessionID);
-        if (!userSession) {
-            userSession = models.Session.build({ sid: req.sessionID, data: JSON.stringify({}) });
-        }
-
-        // Update session data
-        const sessionData = JSON.parse(userSession.data || '{}');
-        sessionData.lastPageVisited = page;
-        userSession.data = JSON.stringify(sessionData);
-        await userSession.save();
 
         // Render the page with problem data
         res.render('browseProblems.ejs', {
             problems: response.data.problems,
             pagination: response.data.pagination,
-            lastVisited: page // Show last visited page
         });
-    } catch (error) {
-        console.error('Error browsing problems:', error.message);
 
+    } catch (error) {
+        // Flash an error message or render an error page
         req.flash('error', 'Error fetching problems. Please try again later.');
-        res.redirect('/'); // Redirect to a default page on error
+        res.redirect('/'); // Redirect the user to a default or error page
     }
 };

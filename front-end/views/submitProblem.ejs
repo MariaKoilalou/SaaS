@@ -31,22 +31,22 @@
 
 <div id="main-div" class="container">
     <h2>Submit Problem</h2>
-    <form action="/submit-problem" method="POST" enctype="multipart/form-data" class="form-container">
-        <!-- Problem Type (optional if needed) -->
+    <!-- Form for submitting a problem -->
+    <form id="problemForm" class="form-container">
+        <!-- Problem Type Dropdown -->
         <div class="mb-3">
             <label for="problemType" class="form-label">Problem Type:</label>
             <select name="problemType" id="problemType" class="form-select">
                 <option value="vrp">Vehicle Routing Problem (VRP)</option>
                 <option value="lp">Linear Programming</option>
                 <option value="knapsack">Knapsack Problem</option>
-                <!-- Add more problem types as needed -->
             </select>
         </div>
 
         <!-- File Upload for Python File -->
         <div class="mb-3">
             <label for="pythonFile" class="form-label">Upload Python File:</label>
-            <input type="file" name="pythonFile" id="pythonFile" class="form-control" accept=".py" required>
+            <input type="file" id="pythonFile" class="form-control" accept=".py" required>
         </div>
 
         <!-- Submit Button -->
@@ -70,5 +70,49 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    document.getElementById('problemForm').addEventListener('submit', async function(event) {
+        event.preventDefault(); // Prevent form from submitting the traditional way
+
+        const problemType = document.getElementById('problemType').value;
+        const fileInput = document.getElementById('pythonFile');
+
+        if (fileInput.files.length === 0) {
+            alert('Please select a Python file to submit.');
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        // Read the file as text
+        reader.onload = async function(e) {
+            const fileText = e.target.result;
+
+            // Send the file content and problem type to the server via Fetch API
+            const response = await fetch('/submit-problem', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    problemType: problemType,
+                    problemData: fileText
+                })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert('Problem submitted successfully!');
+            } else {
+                alert('Failed to submit problem: ' + result.message);
+            }
+        };
+
+        // Trigger the file reader
+        reader.readAsText(file);
+    });
+</script>
 </body>
 </html>

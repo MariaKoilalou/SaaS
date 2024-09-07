@@ -1,81 +1,74 @@
-const sequelize = require('../utils/database');
+const axios = require('axios');
+const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
 var initModels = require("../models/init-models");
 var models = initModels(sequelize);
+const session = require('express-session');
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
 const PROBLEMS_PER_PAGE = 7;
 
 exports.show = async (req, res) => {
-    const page = parseInt(req.query.pageNumber) || 1;
+    const sessionId = req.body.sessionId;
+
+    console.log('show: Received request for sessionId:', sessionId);
 
     try {
-        // Count the total number of problems
-        const totalProblems = await models.Problem.count();
+        if (!sessionId) {
+            return res.status(400).json({ message: 'Session ID is required.' });
+        }
 
+        // Count the total number of problems for this sessionId
+        const totalProblems = await models.Problem.count({
+            where: { sessionId: sessionId }
+        });
+
+        // If there are no problems, return an empty response with pagination metadata
         if (totalProblems === 0) {
             return res.status(200).json({
                 pagination: {
-                    currentPage: page,
-                    hasNextPage: false,
-                    hasPrevPage: false,
-                    nextPage: null,
-                    prevPage: null,
-                    lastPage: 1
+                    totalProblems: 0,
+                    totalPages: 1,
+                    problemsPerPage: PROBLEMS_PER_PAGE
                 },
-                totalProblems: totalProblems,
                 problems: []
             });
         }
 
+        // Calculate total pages based on total problems
         const totalPages = Math.ceil(totalProblems / PROBLEMS_PER_PAGE);
-        if (page > totalPages) {
-            return res.status(404).json({ message: 'This problems page does not exist.', type: 'error' });
-        }
 
-        // Fetch the problems for the current page
+        // Fetch all problems for the sessionId without pagination (since we're not dealing with page numbers)
         const problems = await models.Problem.findAll({
-            offset: (page - 1) * PROBLEMS_PER_PAGE,
-            limit: PROBLEMS_PER_PAGE,
-            order: [['dateCreated', 'ASC']]
+            where: { sessionId: sessionId }, // Fetch only problems for the specified sessionId
+            order: [['dateCreated', 'ASC']] // Order by creation date
         });
 
-        // Log the retrieved problems for debugging
-        console.log('Fetched problems:', problems);
+        // Format the problems array for the response
+        const problemsArr = problems.map(problem => ({
+            id: problem.id,
+            title: problem.title,
+            description: problem.description,
+            dateCreated: new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric',
+                minute: 'numeric',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                weekday: 'long'
+            }).format(new Date(problem.dateCreated))
+        }));
 
-        // Format the problems array
-        const problemsArr = problems.map(problem => {
-            console.log('Problem:', problem);  // Debug log for each problem
-            return {
-                id: problem.id,
-                title: problem.title,
-                description: problem.description,
-                dateCreated: new Intl.DateTimeFormat('en-US', {
-                    hour: 'numeric',
-                    minute: 'numeric',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    weekday: 'long'
-                }).format(new Date(problem.dateCreated))
-            };
-        });
-
-        // Respond with the paginated problems
-        res.status(200).json({
+        // Respond with the total number of problems and calculated total pages
+        return res.status(200).json({
             pagination: {
-                currentPage: page,
-                hasNextPage: PROBLEMS_PER_PAGE * page < totalProblems,
-                hasPrevPage: page > 1,
-                nextPage: page + 1,
-                prevPage: page - 1,
-                lastPage: totalPages
+                totalProblems: totalProblems,
+                totalPages: totalPages,
+                problemsPerPage: PROBLEMS_PER_PAGE
             },
-            totalProblems: totalProblems,
             problems: problemsArr
         });
     } catch (err) {
         console.error('Error fetching problems:', err);
-        res.status(500).json({ message: 'Internal server error.', type: 'error' });
+        return res.status(500).json({ message: 'Internal server error.', type: 'error' });
     }
 };
-
-

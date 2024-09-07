@@ -31,6 +31,8 @@ exports.layout = async (req, res) => {
             addedCredits: null,
             error: "Failed to load the credits page. Please try again later."
         });
+        res.redirect('/'); // Redirect the user to a default or error page
+
     }
 };
 

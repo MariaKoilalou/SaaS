@@ -1,36 +1,32 @@
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
-
-// Configure multer to handle the file upload in memory
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-
-exports.uploadFile = upload.single('pythonFile');  // Ensure the same 'pythonFile' name is used
+const axios = require('axios');
 
 exports.submit = async (req, res) => {
-    // Ensure the file and problemType are provided
-    if (!req.file) {
-        return res.status(400).json({ message: 'File missing. Please provide a .py file and problemType.' });
-    }
-
     try {
-        // Log the incoming file and problem type
-        console.log('Received file:', req.file.originalname);
+        // Extract the problem and sessionId from the request body
+        const { problem, sessionId, sessionBalance } = req.body;
 
-        // Process the problem based on the `problemType`
-        let solution = {};
+        if (!problem || !sessionId) {
+            return res.status(400).json({ message: 'Problem data and sessionId are required' });
+        }
+
+
+        // Check if the session balance is greater than zero
+        if (sessionBalance <= 0) {
+            return res.status(403).json({ message: 'Insufficient balance to submit the problem' });
+        }
+
+        // Decrease the session balance after successful submission
+        const newBalance = sessionBalance - 1;
+
+        return res.status(200).json({
+            message: 'Problem submitted successfully',
+        });
 
     } catch (error) {
-        console.error('Error processing problem:', error.message);
+        console.error('Error processing problem submission:', error.message);
         return res.status(500).json({
-            message: 'Internal server error. Unable to process problem.',
+            message: 'Internal server error. Unable to process the problem submission.',
             error: error.message
         });
     }
 };
-
-
-
-
-
