@@ -1,45 +1,36 @@
-const axios = require('axios');
-const encrypt = require('../utils/encrypt');
+const multer = require('multer');
+const fs = require('fs');
+const path = require('path');
+
+// Configure multer to handle the file upload in memory
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+exports.uploadFile = upload.single('pythonFile');  // Ensure the same 'pythonFile' name is used
 
 exports.submit = async (req, res) => {
-    // Example of adding simple validation
-    if (!req.body.description || req.body.description.trim() === '') {
-        return res.status(400).json({ message: 'Validation Error!', errors: ['Problem description is required.'] });
+    // Ensure the file and problemType are provided
+    if (!req.file) {
+        return res.status(400).json({ message: 'File missing. Please provide a .py file and problemType.' });
     }
 
-    // Construct data object that will be sent with axios
-    const data = {
-        type: 'PROBLEM SUBMIT',
-        description: req.body.description,
-        dateCreated: new Date(), // Using JavaScript Date object, formatted by backend if needed
-    };
-
-    // Set the headers (including encrypted authorization and content type)
-    const headers = {
-        "Custom-Services-Header": encrypt(process.env.SECRET_STRING_SERVICES),
-        "Content-Type": "application/json"
-    };
-
     try {
-        // Use axios.post directly for cleaner code
-        const response = await axios.post('http://your-target-url/api/problems', data, { headers });
+        // Log the incoming file and problem type
+        console.log('Received file:', req.file.originalname);
 
-        // Check response status and content
-        if (response.status === 201) {
-            return res.status(200).json({
-                message: 'Your problem was submitted successfully.',
-                type: 'success',
-                problemId: response.data.problemId // Assuming the response contains a problemId
-            });
-        } else {
-            throw new Error('Unexpected response status: ' + response.status);
-        }
-    } catch (err) {
-        console.error('Error when submitting problem:', err.message);
+        // Process the problem based on the `problemType`
+        let solution = {};
+
+    } catch (error) {
+        console.error('Error processing problem:', error.message);
         return res.status(500).json({
-            message: 'Internal server error. Unable to submit problem.',
-            type: 'error'
+            message: 'Internal server error. Unable to process problem.',
+            error: error.message
         });
     }
 };
+
+
+
+
 

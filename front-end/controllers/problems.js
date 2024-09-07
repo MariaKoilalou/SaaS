@@ -1,49 +1,68 @@
 const axios = require('axios');
-const encrypt = require('../utils/encrypt');
-const sequelize = require('../utils/database');  // Assuming this exports a configured Sequelize instance
+const encrypt = require('../utils/encrypt'); // Assuming encrypt is a utility function you've created
+const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
+const fs = require('fs');
+const FormData = require('form-data');
 var initModels = require("../models/init-models");
 var models = initModels(sequelize);
+const session = require('express-session');
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
+const multer = require('multer');
+
+// Configure multer to store files in memory
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+exports.uploadFile = upload.single('pythonFile');  // 'pythonFile' is the field name for file input in the form
 
 exports.submitProblem = async (req, res) => {
     const url = `http://submit_problem_service:4001/submit`;
-    const headers = {
-        "Custom-Services-Header": encrypt(process.env.SECRET_STRING_SERVICES),
-        "Content-Type": "application/json",
-        "Session-ID": req.session.id,
-    };
+
+    // Ensure the file is provided in the request
+    if (!req.file) {
+        return res.status(400).json({ message: 'No file provided. Please upload a .py file.' });
+    }
 
     try {
-        const response = await axios.post(url, req.body, { headers });
+        // Prepare the form data to send the Python file in memory
+        const formData = new FormData();
+        formData.append('pythonFile', req.file.buffer, {
+            filename: req.file.originalname,  // Original file name
+            contentType: req.file.mimetype    // File MIME type
+        });
 
-        // Create or retrieve a session object
-        let userSession = await models.Session.findByPk(req.session.id || 'defaultSessionId');
-        if (!userSession) {
-            userSession = models.Session.build({sid: req.session.id});
-            req.session.save(); // Ensure session is saved
+
+        // Add session ID if required
+        if (req.session && req.session.id) {
+            formData.append('sessionId', req.session.id);  // Attach session ID if available
         }
 
-        // Serialize session data correctly before saving
-        userSession.data = JSON.stringify({problemId: response.data.problemId});
-        await userSession.save();
-
-        res.render('submitProblem.ejs', {
-            message: 'Problem submitted successfully.',
-            problemId: response.data.problemId,
-            details: response.data.details,
-            description: req.body.description
+        // Make a POST request to the Submit Problem microservice without waiting for a response
+        axios.post(url, formData, {
+            headers: {
+                "Custom-Services-Header": encrypt(process.env.SECRET_STRING_SERVICES),  // Optional: Add custom header
+                ...formData.getHeaders()  // Set appropriate headers for multipart/form-data
+            }
+        }).then((response) => {
+            console.log('Problem submitted successfully:', response.data);
+        }).catch((error) => {
+            console.error('Error submitting problem:', error.message);
         });
+
+
     } catch (error) {
         console.error('Error response data:', error.response ? error.response.data : 'No response data');
-        console.error('Error response headers:', error.response ? error.response.headers : 'No response headers');
-
         console.error('Error submitting problem:', error.message);
 
-        res.render('submitProblem.ejs', {
-            error: 'Failed to submit problem. Please try again later.'
-
+        // Handle errors gracefully
+        return res.status(500).json({
+            message: 'Internal server error. Unable to submit problem.',
+            error: error.message
         });
     }
 };
+
+
 exports.browseProblems = async (req, res) => {
     const url = `http://browse_problems_service:4003/show`;
     const page = +req.query.page || 1;
