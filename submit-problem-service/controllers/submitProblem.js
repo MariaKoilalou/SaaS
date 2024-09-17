@@ -51,35 +51,57 @@ exports.submit = async (req, res) => {
         // Log payload before sending
         console.log('Submitting problem to microservice:', payload);
 
-        // Here, you can simulate the problem submission to this microservice
+        // Simulate session balance deduction
         const newBalance = sessionBalance - 1;
 
-        // Send the problem to other microservices
-        const microservices = [
-            'http://browse_problems_service:4003/problems',
-            'http://manage_problems_service:4004/problems',
-            // 'http://problem_stats_service:4006/problems'
-        ];
+        // Send the problem to the `manage_problems_service` first and get the executionId
+        const manageServiceUrl = 'http://manage_problems_service:4004/problems';
 
-        // Send the payload to each microservice
-        const sendToMicroservices = microservices.map((serviceUrl) => {
-            return axios.post(serviceUrl, payload)
-                .then(() => {
+        try {
+            const manageResponse = await axios.post(manageServiceUrl, {
+                ...payload,  // Include the problem data
+                sessionId    // Ensure sessionId is explicitly sent
+            });
+
+            // Extract the executionId from the manage_problems_service response
+            const executionId = manageResponse.data.executionId;
+            console.log('Received executionId from manage_problems_service:', executionId);
+
+            // Send the problem to other microservices after the manage_problems_service
+            const otherMicroservices = [
+                'http://browse_problems_service:4003/problems',
+                // 'http://problem_stats_service:4006/problems'
+            ];
+
+            // Send the payload to each additional microservice
+            const sendToOtherMicroservices = otherMicroservices.map((serviceUrl) => {
+                return axios.post(serviceUrl, {
+                    ...payload,
+                    sessionId
+                }).then(() => {
                     console.log(`Problem sent to microservice: ${serviceUrl}`);
-                })
-                .catch((error) => {
+                }).catch((error) => {
                     console.error(`Error sending problem to ${serviceUrl}:`, error.message);
                 });
-        });
+            });
 
-        // Wait for all requests to be sent
-        await Promise.all(sendToMicroservices);
+            // Wait for all requests to be sent
+            await Promise.all(sendToOtherMicroservices);
 
-        // Return success response with updated session balance
-        return res.status(200).json({
-            message: 'Problem submitted successfully and sent to all microservices.',
-            newBalance
-        });
+            // Return success response with executionId and updated session balance
+            return res.status(200).json({
+                message: 'Problem submitted successfully and sent to all microservices.',
+                newBalance,
+                executionId  // Include the executionId in the response
+            });
+
+        } catch (manageError) {
+            console.error('Error sending problem to manage_problems_service:', manageError.message);
+            return res.status(500).json({
+                message: 'Failed to submit problem to manage_problems_service.',
+                error: manageError.message
+            });
+        }
 
     } catch (error) {
         console.error('Error processing problem submission:', error.message);

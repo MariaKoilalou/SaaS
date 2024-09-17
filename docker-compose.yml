@@ -197,6 +197,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "4008:4008"
+    environment:
+      - BASE_URL=submit_problem_service
+      - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
+      - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
+      - JWT_SECRET=supersecretjwtkey12345
     networks:
       - my_network
     restart: always

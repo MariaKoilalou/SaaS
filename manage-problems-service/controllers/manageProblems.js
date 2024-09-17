@@ -1,34 +1,68 @@
-const { Problems, Executions } = require('../models/init-models');
+const axios = require('axios');
+const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
+var initModels = require("../models/init-models");
+var models = initModels(sequelize);
+const session = require('express-session');
+const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
 exports.problems = async (req, res) => {
+    const sessionId = req.body.sessionId;
+
     try {
         // Extract problem data from the request body
         const problemData = req.body;
-
-        console.log('Received problem in Browse Problem Service:', problemData);
 
         // Validate the incoming problem data
         if (!problemData.problemType || !problemData.sessionId) {
             return res.status(400).json({ message: 'Problem type and sessionId are required' });
         }
 
-        // Save the problem data in the database for browsing purposes
-        // Assuming you have a Problem model and a `create` function
-        const newProblem = await models.Problem.create({
-            problemType: problemData.problemType,
-            sessionId: problemData.sessionId,
-            problemDetails: problemData,  // You can store all problem details in one column or break them into individual columns as needed
-        });
+            // Save the problem data in the database
+            const newProblem = await models.Problem.create({
+                problemType: problemData.problemType,
+                sessionId: problemData.sessionId,
+                problemDetails: problemData,  // Store the entire problem data as JSON
+            });
 
-        console.log('Problem saved in Browse Problem Service:', newProblem);
+            console.log('Problem saved in Manage Problem Service:', newProblem);
 
-        // Send success response back to the Submit Problem Service
-        return res.status(200).json({ message: 'Problem saved successfully in Browse Problem Service' });
+            // Start the problem execution by sending the problem data to the OR-Tools microservice
+            const ortoolsUrl = 'http://ortools_service:4005/execute';  // Replace with the correct OR-Tools microservice URL
+
+            console.log('Sending problem to OR-Tools microservice for execution...');
+
+            try {
+                const executionResponse = await axios.post(ortoolsUrl, {
+                    problemType: problemData.problemType,
+                    problemDetails: problemData,  // Include relevant problem details for OR-Tools
+                    sessionId: sessionId
+                });
+
+                // Log OR-Tools response
+                console.log('OR-Tools execution response:', executionResponse.data);
+
+                // Handle the successful execution response, return execution ID to submit_problem_service
+                const executionId = executionResponse.data.executionId;
+
+                return res.status(200).json({
+                    message: 'Problem saved and execution started successfully in OR-Tools.',
+                    executionId: executionId,  // Return executionId for tracking
+                    executionResult: executionResponse.data
+                });
+            } catch (execError) {
+                console.error('Error starting execution in OR-Tools:', execError.message);
+                return res.status(500).json({
+                    message: 'Problem saved, but failed to start execution in OR-Tools.',
+                    error: execError.message
+                });
+            }
     } catch (error) {
-        console.error('Error saving problem in Browse Problem Service:', error);
+        console.error('Error saving problem in Manage Problem Service:', error);
         return res.status(500).json({ message: 'Internal server error. Unable to save the problem.' });
     }
 };
+
+
 
 exports.getExecutionStatus = async (req, res) => {
     try {

@@ -73,8 +73,20 @@ exports.handleSubmitProblem = async (req, res) => {
             req.session.balance -= 1;
             await req.session.save();  // Save updated balance in session
 
-            // Redirect the user to the "manage problem" service upon successful submission
-            return res.redirect('/manage-problems');  // Replace with the actual route for managing problems
+            // Retrieve executionId and executionResult from response
+            const executionId = response.data.executionResult.executionId;
+            const executionResult = response.data.executionResult;
+
+            console.log('Execution started with ID:', executionId);
+
+            // Redirect to the manageProblem.ejs page with execution data
+            return res.render('manageProblem.ejs', {
+                sessionBalance: req.session.balance || 0,
+                executionId: executionId,
+                executionResult: executionResult,
+                error: null,
+                message: 'Problem submitted and execution started successfully!'
+            });
         } else {
             // Handle failure to submit problem
             console.log('Problem submission failed:', response.data.message);
