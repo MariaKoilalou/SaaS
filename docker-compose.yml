@@ -1,16 +1,4 @@
 services:
-  nginx_service:
-    image: nginx:latest
-    ports:
-      - "4000:4000"
-    networks:
-      - my_network
-    depends_on:
-      - front_end_service
-      - submit_problem_service
-      - browse_problems_service
-      - buy_credits_service
-
   front_end_db:
     image: postgres:latest
     environment:

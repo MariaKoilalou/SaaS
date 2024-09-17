@@ -27,7 +27,7 @@ exports.problems = async (req, res) => {
             console.log('Problem saved in Manage Problem Service:', newProblem);
 
             // Start the problem execution by sending the problem data to the OR-Tools microservice
-            const ortoolsUrl = 'http://ortools_service:4005/execute';  // Replace with the correct OR-Tools microservice URL
+            const ortoolsUrl = 'http://ortools_service:4008/solver';  // Replace with the correct OR-Tools microservice URL
 
             console.log('Sending problem to OR-Tools microservice for execution...');
 

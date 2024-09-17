@@ -4,6 +4,6 @@ const solverController = require('../controllers/solver');
 
 const router = express.Router();
 
-router.post('/solve', solverController.solve);
+router.post('/solver', solverController.solver);
 
 module.exports = router;
