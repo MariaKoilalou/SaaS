@@ -3,7 +3,9 @@ const problemsController = require('../controllers/problems');
 
 const router = express.Router();
 
-router.get('/submit', problemsController.submitProblem);
+router.get('/', problemsController.renderSubmitProblemForm);
+
+router.post('/submit', problemsController.handleSubmitProblem);
 
 router.get('/show', problemsController.browseProblems);
 

@@ -5,54 +5,89 @@ var models = initModels(sequelize);
 const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
-// Handle both rendering the form and submitting the problem
-exports.submitProblem = async (req, res) => {
+// GET request to render the form
+exports.renderSubmitProblemForm = (req, res) => {
+    console.log('Rendering form - session balance:', req.session.balance);
+
+    return res.render('submitProblem.ejs', {
+        sessionBalance: req.session.balance || 0,
+        error: null,
+        message: null
+    });
+};
+
+// POST request to handle form submission
+exports.handleSubmitProblem = async (req, res) => {
     const url = `http://submit_problem_service:4001/submit`;
 
-    // If no problem data has been posted, render the form
-    if (!req.body.problemData) {
-        return res.render('submitProblem', {
-            error: null, // No error initially
-            message: null // No success message initially
-        });
-    }
+    console.log('Received a POST request to /submit');
+    console.log('Request body:', req.body);
 
-    // If form data exists, handle the submission logic
     try {
-        const { problemData, problemType } = req.body;
+        // Extract values from the request body
+        const { problemType, numVehicles, depot, maxDistance, locationFile, objectiveFunction, constraints, optGoal, itemWeights, itemValues, capacity } = req.body;
 
-        // Check session balance
+        // Get session balance and session ID from session
         const sessionBalance = req.session.balance;
+        const sessionId = req.session.id;
+
+        console.log('Session balance:', sessionBalance);
+        console.log('Session ID:', sessionId);
+
+        // Check if there is enough balance to submit the problem
         if (sessionBalance <= 0) {
-            return res.render('submitProblem', {
-                sessionBalance: req.session.balance || 0,
+            console.log('Insufficient balance');
+            return res.render('submitProblem.ejs', {
+                sessionBalance: sessionBalance || 0,
                 error: 'Insufficient balance in session to submit the problem.',
                 message: null
             });
         }
 
-        // Prepare the payload for the problem microservice
-        const payload = {
-            problem: problemData,
-            sessionId: req.session.id,
-        };
+        // Build the payload to send to the submit problem microservice
+        let payload = { problemType, sessionId, sessionBalance };
 
-        // Make a request to the submit problem microservice
+        // Add specific fields based on the problem type
+        if (problemType === 'vrp') {
+            payload = { ...payload, locationFile, numVehicles, depot, maxDistance };
+        } else if (problemType === 'lp') {
+            payload = { ...payload, objectiveFunction, constraints, optGoal };
+        } else if (problemType === 'knapsack') {
+            payload = {
+                ...payload,
+                itemWeights: itemWeights.split(',').map(Number),
+                itemValues: itemValues.split(',').map(Number),
+                capacity
+            };
+        }
+
+        // Log the payload before sending the request
+        console.log('Sending POST request to submit problem microservice with payload:', payload);
+
+        // Send the request to the submit problem microservice
         const response = await axios.post(url, payload);
 
-        // Deduct balance after successful submission
-        req.session.balance -= 1;
-        await req.session.save(); // Save the updated session balance
+        // Handle successful response
+        if (response.status === 200) {
+            console.log('Problem submitted successfully, deducting balance...');
+            req.session.balance -= 1;
+            await req.session.save();  // Save updated balance in session
 
-        return res.render('submitProblem', {
-            sessionBalance: req.session.balance || 0,
-            error: null,
-            message: 'Problem submitted successfully!'
-        });
-
+            // Redirect the user to the "manage problem" service upon successful submission
+            return res.redirect('/manage-problems');  // Replace with the actual route for managing problems
+        } else {
+            // Handle failure to submit problem
+            console.log('Problem submission failed:', response.data.message);
+            return res.render('submitProblem.ejs', {
+                sessionBalance: req.session.balance || 0,
+                error: `Failed to submit problem: ${response.data.message}`,
+                message: null
+            });
+        }
     } catch (error) {
+        // Handle any errors during the process
         console.error('Error submitting problem:', error.message);
-        return res.render('submitProblem', {
+        return res.render('submitProblem.ejs', {
             sessionBalance: req.session.balance || 0,
             error: 'Internal server error. Unable to submit problem.',
             message: null
@@ -60,15 +95,19 @@ exports.submitProblem = async (req, res) => {
     }
 };
 
-
+// Browse problems logic
 exports.browseProblems = async (req, res) => {
     const url = `http://browse_problems_service:4003/show`;
+
+    console.log('Fetching problems for sessionId:', req.session.id);
 
     try {
         // Send a POST request to fetch problems associated with this sessionId
         const response = await axios.post(url, {
             sessionId: req.session.id
         });
+
+        console.log('Received problems:', response.data.problems);
 
         // Render the page with problem data
         res.render('browseProblems.ejs', {
@@ -77,7 +116,7 @@ exports.browseProblems = async (req, res) => {
         });
 
     } catch (error) {
-        // Flash an error message or render an error page
+        console.error('Error fetching problems:', error.message);
         req.flash('error', 'Error fetching problems. Please try again later.');
         res.redirect('/'); // Redirect the user to a default or error page
     }

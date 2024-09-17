@@ -19,10 +19,6 @@ exports.stats = async (req, res) => {
 };
 
 
-exports.status = (req, res, next) => {
-
-    sequelize.authenticate()
-        .then(() => res.status(200).json({ service: 'Analytics', status: 'UP', uptime: Math.floor(process.uptime()), database: 'Connection - OK' }))
-        .catch(err => res.status(200).json({ service: 'Analytics', status: 'UP', uptime: Math.floor(process.uptime()), database: 'Connection - FAILED' }))
+exports.problems = (req, res, next) => {
 
 }

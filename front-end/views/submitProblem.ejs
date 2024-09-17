@@ -10,18 +10,23 @@
     <link rel="stylesheet" href="/assets/css/header.css">
     <style>
         #main-div {
-            padding-top: 120px; /* Ensure the content starts below the fixed header */
-            padding-bottom: 100px; /* Ensure the content is not hidden by the footer */
+            padding-top: 120px;
+            padding-bottom: 100px;
         }
         .message {
             margin-top: 20px;
             font-size: 18px;
             color: #555;
         }
+        .alert-success {
+            color: green;
+        }
+        .alert-error {
+            color: red;
+        }
     </style>
 </head>
 <body>
-<!-- Header with logo and system info -->
 <header>
     <div class="container">
         <img id="small_logo" src="/assets/img/small_logo.png" alt="solveME logo" class="img-fluid">
@@ -31,8 +36,18 @@
 
 <div id="main-div" class="container">
     <h2>Submit Problem</h2>
-    <!-- Form for submitting a problem -->
-    <form id="problemForm" class="form-container">
+
+    <!-- Display success or error messages -->
+    <% if (message) { %>
+        <p class="alert-success"><%= message %></p>
+    <% } %>
+
+    <% if (error) { %>
+        <p class="alert-error"><%= error %></p>
+    <% } %>
+
+    <!-- Submit Problem Form -->
+    <form id="problemForm" class="form-container" action="/problems/submit" method="POST">
         <!-- Problem Type Dropdown -->
         <div class="mb-3">
             <label for="problemType" class="form-label">Problem Type:</label>
@@ -43,18 +58,83 @@
             </select>
         </div>
 
-        <!-- File Upload for Python File -->
-        <div class="mb-3">
-            <label for="pythonFile" class="form-label">Upload Python File:</label>
-            <input type="file" id="pythonFile" class="form-control" accept=".py" required>
+        <!-- VRP Problem Parameters -->
+        <div id="vrpParameters" style="display:none;">
+            <h4>Vehicle Routing Problem Parameters</h4>
+
+            <div class="mb-3">
+                <label for="locationFile" class="form-label">Select Location File:</label>
+                <select name="locationFile" id="locationFile" class="form-select">
+                    <option value="locations_20.json">20 Locations</option>
+                    <option value="locations_200.json">200 Locations</option>
+                    <option value="locations_1000.json">1000 Locations</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label for="numVehicles" class="form-label">Number of Vehicles:</label>
+                <input type="number" id="numVehicles" name="numVehicles" class="form-control" placeholder="Enter the number of vehicles" min="1" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="depot" class="form-label">Depot Index:</label>
+                <input type="number" id="depot" name="depot" class="form-control" placeholder="Enter the depot index (e.g., 0)" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="maxDistance" class="form-label">Maximum Distance per Vehicle:</label>
+                <input type="number" id="maxDistance" name="maxDistance" class="form-control" placeholder="Enter the max distance each vehicle can travel" required>
+            </div>
+        </div>
+
+        <!-- LP Problem Parameters -->
+        <div id="lpParameters" style="display:none;">
+            <h4>Linear Programming Problem Parameters</h4>
+
+            <div class="mb-3">
+                <label for="objectiveFunction" class="form-label">Objective Function:</label>
+                <input type="text" id="objectiveFunction" name="objectiveFunction" class="form-control" placeholder="Enter the objective function (e.g., 3x + 4y)" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="constraints" class="form-label">Constraints:</label>
+                <textarea id="constraints" name="constraints" class="form-control" rows="3" placeholder="Enter constraints (e.g., x + y ≤ 10)" required></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label for="optGoal" class="form-label">Optimization Goal:</label>
+                <select name="optGoal" id="optGoal" class="form-select">
+                    <option value="maximize">Maximize</option>
+                    <option value="minimize">Minimize</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Knapsack Problem Parameters -->
+        <div id="knapsackParameters" style="display:none;">
+            <h4>Knapsack Problem Parameters</h4>
+
+            <div class="mb-3">
+                <label for="itemWeights" class="form-label">Item Weights (comma-separated):</label>
+                <input type="text" id="itemWeights" name="itemWeights" class="form-control" placeholder="Enter item weights (e.g., 3, 4, 5)" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="itemValues" class="form-label">Item Values (comma-separated):</label>
+                <input type="text" id="itemValues" name="itemValues" class="form-control" placeholder="Enter item values (e.g., 10, 15, 7)" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="capacity" class="form-label">Knapsack Capacity:</label>
+                <input type="number" id="capacity" name="capacity" class="form-control" placeholder="Enter knapsack capacity (e.g., 50)" required>
+            </div>
         </div>
 
         <!-- Submit Button -->
-        <button type="submit" class="btn btn-primary">Submit Problem</button>
+        <button type="submit" class="btn btn-success btn-custom">Submit</button>
     </form>
 </div>
 
-<!-- Footer -->
 <footer class="footer-basic">
     <div class="container text-center">
         <ul class="list-inline">
@@ -68,50 +148,37 @@
     </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    document.getElementById('problemForm').addEventListener('submit', async function(event) {
-        event.preventDefault(); // Prevent form from submitting the traditional way
+    document.getElementById('problemType').addEventListener('change', function() {
+        const problemType = this.value;
+        const vrpParameters = document.getElementById('vrpParameters');
+        const lpParameters = document.getElementById('lpParameters');
+        const knapsackParameters = document.getElementById('knapsackParameters');
 
-        const problemType = document.getElementById('problemType').value;
-        const fileInput = document.getElementById('pythonFile');
+        // Hide all parameter sections initially
+        vrpParameters.style.display = 'none';
+        lpParameters.style.display = 'none';
+        knapsackParameters.style.display = 'none';
 
-        if (fileInput.files.length === 0) {
-            alert('Please select a Python file to submit.');
-            return;
+        // Remove 'required' attribute from all inputs
+        document.querySelectorAll('#lpParameters input, #lpParameters textarea').forEach(input => input.removeAttribute('required'));
+        document.querySelectorAll('#knapsackParameters input').forEach(input => input.removeAttribute('required'));
+
+        // Show the parameters based on the selected problem type and add 'required' to relevant inputs
+        if (problemType === 'vrp') {
+            vrpParameters.style.display = 'block';
+        } else if (problemType === 'lp') {
+            lpParameters.style.display = 'block';
+            document.querySelector('#objectiveFunction').setAttribute('required', 'required');
+            document.querySelector('#constraints').setAttribute('required', 'required');
+        } else if (problemType === 'knapsack') {
+            knapsackParameters.style.display = 'block';
+            document.querySelector('#itemWeights').setAttribute('required', 'required');
+            document.querySelector('#itemValues').setAttribute('required', 'required');
+            document.querySelector('#capacity').setAttribute('required', 'required');
         }
-
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-
-        // Read the file as text
-        reader.onload = async function(e) {
-            const fileText = e.target.result;
-
-            // Send the file content and problem type to the server via Fetch API
-            const response = await fetch('/submit-problem', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    problemType: problemType,
-                    problemData: fileText
-                })
-            });
-
-            const result = await response.json();
-            if (response.ok) {
-                alert('Problem submitted successfully!');
-            } else {
-                alert('Failed to submit problem: ' + result.message);
-            }
-        };
-
-        // Trigger the file reader
-        reader.readAsText(file);
     });
 </script>
 </body>

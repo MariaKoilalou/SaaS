@@ -20,9 +20,6 @@ app.use(flash());
 
 const browseProblems = require('./routes/browseProblems');
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 app.use(session({
     secret: process.env.SECRET_SESSION_STRING || 'default_secret',
     resave: false,  // Avoid resaving session if it hasn't been modified
