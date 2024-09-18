@@ -1,2 +1,6 @@
-flask
-ortools
+ortools==9.11.4210
+pandas>=2.0.0
+numpy>=1.23.2
+
+
+

@@ -20,14 +20,14 @@ exports.solver = async (req, res) => {
         }
 
         // Define the correct path to the Python script located outside the current directory
-        const scriptPath = path.resolve(__dirname, '../vrpsolver.py');  // Assuming the script is in the parent directory
+        const scriptPath = path.resolve(__dirname, 'vrpSolver.py');  // Assuming the script is in the parent directory
+        const locationFilePath = path.resolve(__dirname, 'locations_20.json');
 
         // Construct the command to run the Python script
-        const command = `python3 ${scriptPath} --location_file ${locationFile} --num_vehicles ${numVehicles} --depot ${depot} --max_distance ${maxDistance}`;
+        const command = `python3 ${scriptPath} ${locationFilePath} ${numVehicles} ${depot} ${maxDistance}`;
 
         console.log('Executing command:', command);
 
-        // Execute the Python script with the constructed command
         exec(command, (error, stdout, stderr) => {
             if (error) {
                 console.error('Error executing VRP solver:', error);
@@ -39,24 +39,30 @@ exports.solver = async (req, res) => {
 
             console.log('VRP Solver Output:', stdout);
 
-            // Parse the output from the Python script (assuming it's JSON)
+            // Check if the output contains "No solution found"
+            if (stdout.includes('No solution found')) {
+                return res.status(200).json({
+                    message: 'No solution found for the given VRP problem.'
+                });
+            }
+
             let result;
             try {
-                result = JSON.parse(stdout);
+                result = JSON.parse(stdout); // Try to parse the output if it's valid JSON
             } catch (parseError) {
                 console.error('Error parsing solver output:', parseError);
                 return res.status(500).json({
-                    message: 'Error parsing the solver output.',
+                    message: 'Error parsing the solver output. The solver did not return a valid solution.',
                     error: parseError.message
                 });
             }
 
-            // Send the result back to the manage problem service or frontend
             return res.status(200).json({
                 message: 'VRP problem solved successfully.',
                 result
             });
         });
+
     } catch (error) {
         console.error('Error processing problem in OR-Tools:', error.message);
         return res.status(500).json({
