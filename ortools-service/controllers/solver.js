@@ -1,5 +1,6 @@
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 exports.solver = async (req, res) => {
     try {
@@ -20,47 +21,70 @@ exports.solver = async (req, res) => {
         }
 
         // Define the correct path to the Python script located outside the current directory
-        const scriptPath = path.resolve(__dirname, 'vrpSolver.py');  // Assuming the script is in the parent directory
-        const locationFilePath = path.resolve(__dirname, 'locations_20.json');
+        const scriptPath = path.resolve(__dirname, 'vrpSolver.py');  // Python VRP solver script
+        const locationFilePath = path.resolve(__dirname, locationFile);  // Path to the location file
 
-        // Construct the command to run the Python script
+        if (!fs.existsSync(locationFilePath)) {
+            return res.status(400).json({ message: 'Location file not found.' });
+        }
+
+        // Construct the command to run the Python script using spawn
         const command = `python3 ${scriptPath} ${locationFilePath} ${numVehicles} ${depot} ${maxDistance}`;
 
         console.log('Executing command:', command);
 
-        exec(command, (error, stdout, stderr) => {
-            if (error) {
-                console.error('Error executing VRP solver:', error);
-                return res.status(500).json({
-                    message: 'Error solving the problem with OR-Tools.',
-                    error: stderr || error.message
-                });
-            }
+        // Use spawn to execute the Python script and stream the output
+        const solverProcess = spawn('python3', [scriptPath, locationFilePath, numVehicles, depot, maxDistance]);
 
-            console.log('VRP Solver Output:', stdout);
+        // Set response headers for streaming
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Transfer-Encoding', 'chunked');
 
-            // Check if the output contains "No solution found"
-            if (stdout.includes('No solution found')) {
-                return res.status(200).json({
-                    message: 'No solution found for the given VRP problem.'
-                });
-            }
+        // Send initial progress update to the client
+        res.write(JSON.stringify({ status: 'started', progress: 0 }) + '\n');
 
-            let result;
+        // Capture real-time output from the Python script
+        solverProcess.stdout.on('data', (data) => {
+            const output = data.toString();
+            console.log('VRP Solver Output:', output);
+
+            // Parse progress or partial results from the output
             try {
-                result = JSON.parse(stdout); // Try to parse the output if it's valid JSON
+                const progressUpdate = JSON.parse(output);
+                // Send partial results/progress to the client
+                res.write(JSON.stringify({
+                    status: 'in-progress',
+                    progress: progressUpdate.progress || null,
+                    partialResult: progressUpdate.partialResult || null
+                }) + '\n');
             } catch (parseError) {
-                console.error('Error parsing solver output:', parseError);
-                return res.status(500).json({
-                    message: 'Error parsing the solver output. The solver did not return a valid solution.',
-                    error: parseError.message
-                });
+                console.log('Non-JSON output received, streaming raw output.');
+                res.write(JSON.stringify({
+                    status: 'in-progress',
+                    rawOutput: output
+                }) + '\n');
             }
+        });
 
-            return res.status(200).json({
-                message: 'VRP problem solved successfully.',
-                result
-            });
+        // Handle process completion
+        solverProcess.on('close', (code) => {
+            if (code === 0) {
+                res.write(JSON.stringify({ status: 'completed', progress: 100 }) + '\n');
+                res.end();
+            } else {
+                res.write(JSON.stringify({
+                    status: 'failed',
+                    error: 'Solver process exited with non-zero code: ' + code
+                }) + '\n');
+                res.end();
+            }
+        });
+
+        // Handle errors from the solver process
+        solverProcess.stderr.on('data', (data) => {
+            console.error('Error in VRP Solver:', data.toString());
+            res.write(JSON.stringify({ status: 'error', error: data.toString() }) + '\n');
+            res.end();
         });
 
     } catch (error) {
@@ -71,5 +95,6 @@ exports.solver = async (req, res) => {
         });
     }
 };
+
 
 

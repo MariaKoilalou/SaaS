@@ -10,6 +10,10 @@ module.exports = function(sequelize, DataTypes) {
         },
         sessionId: {
             type: DataTypes.STRING,
+            references: {
+                model: 'Session',
+                key: 'sid'
+            },
             allowNull: false,
         },
         title: {

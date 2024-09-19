@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.post('/show', browseProblemsController.show);
 
-router.post('/problems', browseProblemsController.problems);
+router.post('/problems', browseProblemsController.getProblem);
 
 module.exports = router;

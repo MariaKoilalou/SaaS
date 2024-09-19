@@ -3,7 +3,7 @@ const manageProblemsController = require('../controllers/manageProblems');
 
 const router = express.Router();
 
-router.post('/problems', manageProblemsController.problems);
+router.post('/problems', manageProblemsController.getProblem);
 
 router.get('/:executionId', manageProblemsController.getExecutionStatus);
 
