@@ -4,11 +4,6 @@ exports.submit = async (req, res) => {
     try {
         const { problemType, sessionId, sessionBalance, locationFile, numVehicles, depot, maxDistance, objectiveFunction, constraints, optGoal, itemWeights, itemValues, capacity } = req.body;
 
-        // Log incoming data for debugging
-        console.log('Problem Type:', problemType);
-        console.log('Session ID:', sessionId);
-        console.log('Session Balance:', sessionBalance);
-
         // Check if problemType and sessionId are provided
         if (!problemType || !sessionId) {
             return res.status(400).json({ message: 'Problem type and sessionId are required' });
@@ -67,32 +62,11 @@ exports.submit = async (req, res) => {
             const executionId = manageResponse.data.executionId;
             console.log('Received executionId from manage_problems_service:', executionId);
 
-            // Send the problem to other microservices after the manage_problems_service
-            const otherMicroservices = [
-                'http://browse_problems_service:4003/problems',
-                // 'http://problem_stats_service:4006/problems'
-            ];
-
-            // Send the payload to each additional microservice
-            const sendToOtherMicroservices = otherMicroservices.map((serviceUrl) => {
-                return axios.post(serviceUrl, {
-                    ...payload,
-                    sessionId
-                }).then(() => {
-                    console.log(`Problem sent to microservice: ${serviceUrl}`);
-                }).catch((error) => {
-                    console.error(`Error sending problem to ${serviceUrl}:`, error.message);
-                });
-            });
-
-            // Wait for all requests to be sent
-            await Promise.all(sendToOtherMicroservices);
-
             // Return success response with executionId and updated session balance
             return res.status(200).json({
-                message: 'Problem submitted successfully and sent to all microservices.',
+                message: 'Problem submitted successfully',
                 newBalance,
-                executionId  // Include the executionId in the response
+                executionId
             });
 
         } catch (manageError) {

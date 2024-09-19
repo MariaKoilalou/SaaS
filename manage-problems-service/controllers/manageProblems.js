@@ -8,6 +8,7 @@ const io = require('../utils/socket'); // Assuming you have a socket setup
 
 exports.getProblem = async (req, res) => {
     const sessionId = req.body.sessionId;
+    const url = 'http://browse_problem_service:4003/problems';
 
     console.log('getProblem: Received request for sessionId:', sessionId);
 
@@ -44,6 +45,20 @@ exports.getProblem = async (req, res) => {
 
             console.log('Problem saved in Manage Problem Service:', newProblem);
 
+            // Send a POST request to the browse problem service to notify of the new problem submission
+            try {
+                await axios.post(url, {
+                    problemId: newProblem.id,
+                    sessionId: newProblem.sessionId,
+                    status: 'pending',
+                    problemType: newProblem.problemType,
+                    details: newProblem.problemDetails
+                });
+                console.log('New problem notified to Browse Problem Service');
+            } catch (error) {
+                console.error('Failed to notify Browse Problem Service:', error.message);
+            }
+
             // Create an execution entry in the database with a "pending" status before starting execution
             const newExecution = await models.Execution.create({
                 problemId: newProblem.id,  // Link the execution to the problem
@@ -64,79 +79,63 @@ exports.getProblem = async (req, res) => {
 
             console.log('Sending problem to OR-Tools microservice for execution...');
 
-            // Use a streaming response from OR-Tools for real-time updates
             try {
-                const executionResponse = await axios({
-                    method: 'post',
-                    url: ortoolsUrl,
-                    data: {
-                        problemType: problemData.problemType,
-                        problemDetails: problemData,  // Include relevant problem details for OR-Tools
-                        sessionId: sessionId
-                    },
-                    responseType: 'stream' // Stream the OR-Tools response
+                const executionResponse = await axios.post(ortoolsUrl, {
+                    problemType: problemData.problemType,
+                    problemDetails: problemData,  // Include relevant problem details for OR-Tools
+                    sessionId: sessionId
                 });
 
-                executionResponse.data.on('data', async (chunk) => {
-                    const update = JSON.parse(chunk.toString());
-
-                    // Emit real-time update to the client via WebSocket
-                    io.getIO().emit('executionUpdate', {
-                        executionId: newExecution.id,
-                        status: update.status || 'in-progress',
-                        progress: update.progress || 0, // Progress percentage
-                        partialResult: update.partialResult || null // If there are partial results
-                    });
-
-                    // Optionally, you can update the execution record in the database with the progress
-                    await newExecution.update({
-                        status: update.status || 'in-progress',
-                        result: update.partialResult || null
-                    });
+                // Update the execution entry in the database with the result
+                await newExecution.update({
+                    status: 'completed',  // Update status to completed
+                    result: executionResponse.data.executionResult || null  // Store the execution result
                 });
 
-                // When OR-Tools finishes the execution
-                executionResponse.data.on('end', async () => {
-                    console.log('OR-Tools execution completed.');
+                console.log('Execution completed for ID:', newExecution.id);
 
-                    // Update the execution entry in the database with the final result
-                    await newExecution.update({
-                        status: 'completed',  // Update status to completed
-                        result: 'Final result from OR-Tools' // Example final result
-                    });
+                // Notify browse problem service that execution is completed
+                await axios.patch(`${BROWSE_PROBLEM_SERVICE_URL}/${newProblem.id}`, {
+                    status: 'completed',
+                    result: executionResponse.data.executionResult
+                });
 
-                    io.getIO().emit('executionComplete', {
-                        executionId: newExecution.id,
-                        message: 'Execution completed successfully for ID: ' + newExecution.id
-                    });
+                console.log('Execution result updated in Browse Problem Service.');
 
-                    return res.status(200).json({
-                        message: 'Problem saved and execution started successfully with real-time updates.',
-                        executionId: newExecution.id
-                    });
+                return res.status(200).json({
+                    message: 'Problem solved and execution completed successfully.',
+                    executionId: newExecution.id,
+                    executionResult: executionResponse.data
                 });
 
             } catch (execError) {
-                console.error('Error starting execution in OR-Tools:', execError.message);
+                console.error('Error during OR-Tools execution:', execError.message);
 
-                // Update the execution entry in the database to "failed"
+                // Mark the execution as failed in the database
                 await newExecution.update({
-                    status: 'failed',  // Mark the execution as failed
-                    result: execError.message  // Store the error message
+                    status: 'failed',
+                    result: execError.message
                 });
 
+                // Notify the browse problem service that the execution failed
+                await axios.patch(`${BROWSE_PROBLEM_SERVICE_URL}/${newProblem.id}`, {
+                    status: 'failed',
+                    result: execError.message
+                });
+
+                console.log('Execution failure notified to Browse Problem Service.');
+
                 return res.status(500).json({
-                    message: 'Problem saved, but failed to start execution in OR-Tools.',
+                    message: 'Execution failed in OR-Tools.',
                     error: execError.message
                 });
             }
         });
     } catch (error) {
-        console.error('Error saving problem in Manage Problem Service:', error);
+        console.error('Error saving problem in Manage Problem Service:', error.message);
         return res.status(500).json({ message: 'Internal server error. Unable to save the problem.' });
     }
 };
-
 
 
 
