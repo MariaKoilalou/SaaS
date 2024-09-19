@@ -4,6 +4,7 @@ const session = require('express-session');
 const flash = require('connect-flash');
 const sequelize = require('./utils/database'); // Sequelize instance for DB connection
 const SequelizeStore = require('connect-session-sequelize')(session.Store); // Sequelize session store
+const store = require('./utils/sessionStore'); // Import the session store
 
 const app = express();
 
@@ -47,14 +48,8 @@ app.use(session({
     }
 }));
 
-// Sync the session store (creates the session table if not exists)
-sequelize.sync()
-    .then(() => {
-        console.log('Database synced and session table ready.');
-    })
-    .catch((err) => {
-        console.error('Error syncing the database:', err);
-    });
+// Sync session store to create session table
+store.sync();
 
 // Define routes
 app.use('/', layout);        // General layout routes

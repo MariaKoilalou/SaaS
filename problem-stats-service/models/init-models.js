@@ -1,22 +1,29 @@
 const DataTypes = require("sequelize").DataTypes;
-const _Problems = require("./Problems");
+const _Problem = require("./Problem");
 const _Stats = require("./Stats");
+const _Execution = require("./Execution");
 
 function initModels(sequelize) {
-    const Problems = _Problems(sequelize, DataTypes);
+    const Problem = _Problem(sequelize, DataTypes);
     const Stats = _Stats(sequelize, DataTypes);
+    const Execution = _Execution(sequelize, DataTypes);
+
 
     // Define relationships
-    Problems.hasOne(Stats, {
-        foreignKey: 'problemId', // Ensure this key matches the one defined in your Executions model
-        as: 'stats' // Optionally define an alias for easier access and clearer code
+    Execution.hasOne(Stats, {
+        foreignKey: 'executionId',
+        as: 'execution'
     });
-    Stats.belongsTo(Problems, {
+    Problem.hasMany(Execution, {
         foreignKey: 'problemId',
-        as: 'problem' // Optionally define an alias for the reverse relationship
+        as: 'stats'
+    });
+    Execution.belongsTo(Problem, {
+        foreignKey: 'problemId',
+        as: 'execution'
     });
 
-    return { Problems, Stats };
+    return { Problem, Stats, Execution };
 }
 
 module.exports = initModels;

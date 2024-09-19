@@ -26,6 +26,15 @@ exports.problems = async (req, res) => {
 
         console.log('Problem saved in Manage Problem Service:', newProblem);
 
+        // Create an execution entry in the database with a "pending" status before starting execution
+        const newExecution = await models.Execution.create({
+            problemId: newProblem.id,  // Link the execution to the problem
+            status: 'pending',  // Set initial status to pending
+            result: null  // No result yet, it will be updated after execution
+        });
+
+        console.log('Execution created with ID:', newExecution.id);
+
         // Start the problem execution by sending the problem data to the OR-Tools microservice
         const ortoolsUrl = 'http://ortools_service:4008/solver';  // OR-Tools microservice URL
 
@@ -41,14 +50,13 @@ exports.problems = async (req, res) => {
             // Log OR-Tools response
             console.log('OR-Tools execution response:', executionResponse.data);
 
-            // Create a new execution entry in the database
-            const newExecution = await models.Execution.create({
-                problemId: newProblem.id, // Link to the problem that was saved
-                status: 'started',  // You can change this status based on the execution progress
-                result: executionResponse.data.executionResult || null, // Store the result if available
+            // Update the execution entry in the database with the result
+            await newExecution.update({
+                status: 'completed',  // Update status to completed
+                result: executionResponse.data.executionResult || null  // Store the execution result
             });
 
-            console.log('Execution created with ID:', newExecution.id);
+            console.log('Execution updated with result for ID:', newExecution.id);
 
             // Return executionId and success response
             return res.status(200).json({
@@ -59,9 +67,8 @@ exports.problems = async (req, res) => {
         } catch (execError) {
             console.error('Error starting execution in OR-Tools:', execError.message);
 
-            // Mark execution as failed in the database (optional step)
-            await models.Execution.create({
-                problemId: newProblem.id,
+            // Update the execution entry in the database to "failed"
+            await newExecution.update({
                 status: 'failed',  // Mark the execution as failed
                 result: execError.message  // Store the error message
             });
@@ -76,6 +83,7 @@ exports.problems = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error. Unable to save the problem.' });
     }
 };
+
 
 // Retrieve execution status by execution ID
 exports.getExecutionStatus = async (req, res) => {
