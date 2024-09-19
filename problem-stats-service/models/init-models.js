@@ -2,28 +2,42 @@ const DataTypes = require("sequelize").DataTypes;
 const _Problem = require("./Problem");
 const _Stats = require("./Stats");
 const _Execution = require("./Execution");
+const _Session = require("./Session");
 
 function initModels(sequelize) {
     const Problem = _Problem(sequelize, DataTypes);
     const Stats = _Stats(sequelize, DataTypes);
     const Execution = _Execution(sequelize, DataTypes);
+    const Session = _Session(sequelize, DataTypes);
 
 
     // Define relationships
+    Session.hasMany(Problem, {
+        foreignKey: 'sessionId',
+        as: 'problems'
+    });
+    Problem.belongsTo(Session, {
+        foreignKey: 'sessionId',
+        as: 'session'
+    });
     Execution.hasOne(Stats, {
         foreignKey: 'executionId',
-        as: 'execution'
+        as: 'stats'
     });
     Problem.hasMany(Execution, {
         foreignKey: 'problemId',
-        as: 'stats'
+        as: 'executions'
     });
     Execution.belongsTo(Problem, {
         foreignKey: 'problemId',
+        as: 'problem'
+    });
+    Stats.belongsTo(Execution, {
+        foreignKey: 'executionId',
         as: 'execution'
     });
 
-    return { Problem, Stats, Execution };
+    return {Session, Problem, Stats, Execution };
 }
 
 module.exports = initModels;

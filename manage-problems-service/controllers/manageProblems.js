@@ -20,7 +20,7 @@ exports.problems = async (req, res) => {
         // Save the problem data in the database
         const newProblem = await models.Problem.create({
             problemType: problemData.problemType,
-            sessionId: problemData.sessionId,
+            sessionId: req.body.sessionId,
             problemDetails: problemData,  // Store the entire problem data as JSON
         });
 

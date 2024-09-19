@@ -35,6 +35,7 @@ module.exports = function(sequelize, DataTypes) {
     }, {
         sequelize,
         tableName: 'Problem',
+        schema: process.env.DB_SCHEMA,
         timestamps: false,
         indexes: [
             {

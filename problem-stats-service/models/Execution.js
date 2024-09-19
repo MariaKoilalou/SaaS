@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-    return sequelize.define('Executions', {
+    return sequelize.define('Execution', {
         id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
@@ -10,13 +10,13 @@ module.exports = (sequelize, DataTypes) => {
         problemId: {
             type: DataTypes.INTEGER,
             references: {
-                model: 'Problems',
+                model: 'Problem',
                 key: 'id'
             }
         },
         status: {
-            type: DataTypes.ENUM('queued', 'running', 'completed', 'failed'),
-            defaultValue: 'queued'
+            type: Sequelize.ENUM('pending', 'started', 'completed', 'failed'),
+            defaultValue: 'pending'
         },
         result: {
             type: DataTypes.TEXT,
@@ -24,11 +24,11 @@ module.exports = (sequelize, DataTypes) => {
         }
     }, {
         sequelize,
-        tableName: 'Executions',
+        tableName: 'Execution',
         schema: process.env.DB_SCHEMA,
         timestamps: false,
         indexes: [{
-            name: "Executions_pkey",
+            name: "Execution_pkey",
             unique: true,
             fields: [
                 { name: "id" },

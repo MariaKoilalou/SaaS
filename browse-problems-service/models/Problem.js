@@ -10,7 +10,10 @@ module.exports = function(sequelize, DataTypes) {
         },
         sessionId: {
             type: DataTypes.STRING,
-            allowNull: false,
+            references: {
+                model: 'Session',
+                key: 'sid'
+            }
         },
         title: {
             type: DataTypes.STRING,
@@ -35,6 +38,7 @@ module.exports = function(sequelize, DataTypes) {
     }, {
         sequelize,
         tableName: 'Problem',
+        schema: process.env.DB_SCHEMA,
         timestamps: false,
         indexes: [
             {

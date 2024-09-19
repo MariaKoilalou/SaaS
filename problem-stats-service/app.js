@@ -7,6 +7,8 @@ const store = require('./utils/sessionStore'); // Import the session store
 var initModels = require("./models/init-models");
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
+const app = express();
+
 // Initialize models
 initModels(sequelize);
 
@@ -17,8 +19,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(flash());
 
 const stats = require('./routes/stats');
-const app = express();
-
 app.use(session({
     secret: process.env.SECRET_SESSION_STRING || 'default_secret',
     resave: false,
