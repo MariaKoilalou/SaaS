@@ -44,30 +44,31 @@ exports.submit = async (req, res) => {
         }
 
         // Log payload before sending
-        console.log('Submitting problem to microservice:', payload);
+        console.log('Submitting problem to manage problem service:', payload);
 
         // Simulate session balance deduction
         const newBalance = sessionBalance - 1;
 
-        // Send the problem to the `manage_problems_service` first and get the executionId
+        // Send the problem to the manage_problems_service and start execution
         const manageServiceUrl = 'http://manage_problems_service:4004/problems';
 
         try {
             const manageResponse = await axios.post(manageServiceUrl, {
-                ...payload,  // Include the problem data
-                sessionId    // Ensure sessionId is explicitly sent
+                ...payload,
+                sessionId,
+                newBalance
             });
 
-            // Extract the executionId from the manage_problems_service response
+            // Extract the executionId from the response
             const executionId = manageResponse.data.executionId;
             console.log('Received executionId from manage_problems_service:', executionId);
 
-            // Return success response with executionId and updated session balance
             return res.status(200).json({
                 message: 'Problem submitted successfully',
                 newBalance,
                 executionId
             });
+
 
         } catch (manageError) {
             console.error('Error sending problem to manage_problems_service:', manageError.message);

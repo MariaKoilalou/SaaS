@@ -6,7 +6,7 @@ module.exports = function(sequelize, DataTypes) {
             primaryKey: true
         },
         expire: {
-            type: DataTypes.ARRAY(DataTypes.DATE),
+            type: DataTypes.DATE,
             allowNull: true
         },
         data: {

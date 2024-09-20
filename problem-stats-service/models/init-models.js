@@ -1,14 +1,14 @@
 const DataTypes = require("sequelize").DataTypes;
-const _Problem = require("./Problem");
-const _Stats = require("./Stats");
-const _Execution = require("./Execution");
 const _Session = require("./Session");
+const _Problem = require("./Problem");
+const _Execution = require("./Execution");
+const _Stats = require("./Stats");
 
 function initModels(sequelize) {
-    const Problem = _Problem(sequelize, DataTypes);
-    const Stats = _Stats(sequelize, DataTypes);
-    const Execution = _Execution(sequelize, DataTypes);
     const Session = _Session(sequelize, DataTypes);
+    const Problem = _Problem(sequelize, DataTypes);
+    const Execution = _Execution(sequelize, DataTypes);
+    const Stats = _Stats(sequelize, DataTypes);
 
 
     // Define relationships

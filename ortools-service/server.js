@@ -4,5 +4,5 @@ const app = require('./app'); // Import the Express app
 const port = process.env.PORT || 4008;
 
 app.listen(port, () => {
-    console.log(`Submit Problem Service running on port ${port}!`);
+    console.log(`OR-ToolsService running on port ${port}!`);
 });

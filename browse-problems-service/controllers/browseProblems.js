@@ -1,7 +1,7 @@
 const axios = require('axios');
 const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
-var initModels = require("../models/init-models");
-var models = initModels(sequelize);
+const initModels = require("../models/init-models");
+const models = initModels(sequelize);
 const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
@@ -9,24 +9,21 @@ const PROBLEMS_PER_PAGE = 7;
 
 exports.show = async (req, res) => {
     const sessionId = req.body.sessionId;
-
+    const newBalance = req.body.newBalance;
     console.log('show: Received request for sessionId:', sessionId);
 
     try {
-        // Override session ID with the provided one
-        req.sessionID = sessionId;
+        // Check if the session exists in the Session table
+        let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
 
-        // Retrieve session data using the session ID
-        req.sessionStore.get(sessionId, async (err, sessionData) => {
-            if (err) {
-                console.error('Error fetching session:', err);
-                return res.status(500).json({ message: 'Failed to retrieve session.' });
-            }
-
-            if (!sessionData) {
-                console.log('Session not found for sessionId:', sessionId);
-                return res.status(400).json({ message: 'Invalid session.' });
-            }
+        if (!sessionData) {
+            console.log(`Session ${sessionId} not found, creating a new one.`);
+            sessionData = await models.Session.create({
+                sid: sessionId,
+                expire: new Date(Date.now() + 24 * 60 * 60 * 1000),  // 24-hour expiration
+                data: JSON.stringify({ balance: newBalance })
+            });
+        }
 
             // Fetch problem data based on session
             const totalProblems = await models.Problem.count({
@@ -73,7 +70,6 @@ exports.show = async (req, res) => {
                 },
                 problems: problemsArr
             });
-        });
     } catch (err) {
         console.error('Error fetching problems:', err);
         return res.status(500).json({ message: 'Internal server error.', type: 'error' });
@@ -82,45 +78,50 @@ exports.show = async (req, res) => {
 
 exports.getProblem = async (req, res) => {
     const sessionId = req.body.sessionId;
+    const newBalance = req.body.newBalance;
 
     console.log('getProblem: Received request for sessionId:', sessionId);
 
     try {
-        // Override session ID with the provided one
-        req.sessionID = sessionId;
+        // Check if the session exists in the Session table
+        let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
+        console.log('Session data found:', sessionData);
 
-        // Retrieve session data using the session ID
-        req.sessionStore.get(sessionId, async (err, sessionData) => {
-            if (err) {
-                console.error('Error fetching session:', err);
-                return res.status(500).json({ message: 'Failed to retrieve session.' });
-            }
-
-            if (!sessionData) {
-                console.log('Session not found for sessionId:', sessionId);
-                return res.status(400).json({ message: 'Invalid session.' });
-            }
-
-            const problemData = req.body;
-
-            if (!problemData.problemType || !problemData.sessionId) {
-                return res.status(400).json({ message: 'Problem type and sessionId are required' });
-            }
-
-            // Save the problem data in the database
-            const newProblem = await models.Problem.create({
-                problemType: problemData.problemType,
-                sessionId: problemData.sessionId,
-                problemDetails: problemData
+        // If session doesn't exist, create it
+        if (!sessionData) {
+            console.log(`Session ${sessionId} not found, creating a new one.`);
+            sessionData = await models.Session.create({
+                sid: sessionId,
+                expire: new Date(Date.now() + 24 * 60 * 60 * 1000),  // 24-hour expiration
+                data: JSON.stringify({ balance: newBalance })
             });
+            console.log('New session created:', sessionData);
+        }
 
-            console.log('Problem saved in Browse Problem Service:', newProblem);
+        // Validate the incoming problem data
+        const problemData = req.body;
 
-            return res.status(200).json({ message: 'Problem saved successfully in Browse Problem Service' });
+        if (!problemData.problemType || !problemData.sessionId) {
+            console.log('Invalid problemType or sessionId:', problemData);
+            return res.status(400).json({ message: 'Problem type and sessionId are required' });
+        }
+
+        // Save the problem data in the database
+        const newProblem = await models.Problem.create({
+            problemType: problemData.problemType,
+            sessionId: problemData.sessionId,
+            problemDetails: problemData
         });
+
+        console.log('Problem saved:', newProblem);
+
+        return res.status(200).json({ message: 'Problem saved successfully' });
+
     } catch (error) {
-        console.error('Error saving problem in Browse Problem Service:', error);
+        console.error('Error saving problem:', error);
         return res.status(500).json({ message: 'Internal server error. Unable to save the problem.' });
     }
 };
+
+
 

@@ -48,6 +48,11 @@
             font-size: 18px;
             color: green;
         }
+        .error-message {
+            margin-top: 20px;
+            font-size: 18px;
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -65,46 +70,40 @@
         Solver Model
     </div>
 
-    <!-- Metadata List -->
+    <!-- Metadata and Input Data -->
     <div class="row search-container">
+        <!-- Metadata List -->
         <div class="col">
             <div class="title-bar">Metadata</div>
-            <ul class="search-list">
-                <!-- Sample metadata list item, replace with dynamic content -->
-                <li class="list-item">Metadata ID: 1 | Title: Metadata 1 | UOM: kg</li>
-                <li class="list-item">Metadata ID: 2 | Title: Metadata 2 | UOM: m</li>
-                <!-- Add more metadata list items as needed -->
+            <ul id="metadata-list" class="search-list">
+                <!-- Metadata items will be dynamically loaded here -->
             </ul>
         </div>
         <!-- Input Data List -->
         <div class="col">
             <div class="title-bar">Input Data</div>
-            <ul class="search-list">
-                <!-- Sample input data list item, replace with dynamic content -->
-                <li class="list-item">Input Data ID: 1 | Title: Input Data 1 | UOM: kg</li>
-                <li class="list-item">Input Data ID: 2 | Title: Input Data 2 | UOM: m</li>
-                <!-- Add more input data list items as needed -->
+            <ul id="input-data-list" class="search-list">
+                <!-- Input data items will be dynamically loaded here -->
             </ul>
         </div>
     </div>
 
-    <!-- New Submission Text -->
-    <div class="message">
-        New problem submission for <model>
-    </div>
 
-    <!-- Upload Submission Metadata -->
+    <!-- Upload Submission Metadata Form -->
     <div class="upload-container">
         <div class="input-group">
-            <input type="text" class="form-control" placeholder="Upload submission metadata" aria-label="Upload submission metadata">
-            <button class="btn btn-primary" type="button">Create</button>
+            <input id="metadata-input" type="text" class="form-control" placeholder="Upload submission metadata" aria-label="Upload submission metadata">
+            <button class="btn btn-primary" type="button" onclick="submitProblem()">Create</button>
             <button class="btn btn-secondary" type="button">Cancel</button>
         </div>
     </div>
 
-    <!-- Success Message -->
-    <div class="success-message">
+    <!-- Success or Error Message -->
+    <div id="feedback-message" class="success-message" style="display: none;">
         Scenario created successfully
+    </div>
+    <div id="error-message" class="error-message" style="display: none;">
+        Error submitting problem.
     </div>
 </div>
 
@@ -122,4 +121,36 @@
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+// Display execution status in real-time using WebSockets
+<script>
+    const socket = io();
+    const executionId = '<%= executionId %>';  // Use executionId from the server
+
+    // Listen for real-time status updates from the backend
+    socket.on('executionStatus', function (data) {
+        if (data.executionId === executionId) {
+            document.getElementById('status').textContent = data.status;
+        }
+    });
+
+    // Handle execution completion event
+    socket.on('executionCompleted', function (data) {
+        if (data.executionId === executionId) {
+            document.getElementById('status').textContent = 'Completed';
+            alert('Execution Completed: ' + JSON.stringify(data.result));
+        }
+    });
+
+    // Handle execution failure event
+    socket.on('executionFailed', function (data) {
+        if (data.executionId === executionId) {
+            document.getElementById('status').textContent = 'Failed';
+            alert('Execution Failed: ' + data.error);
+        }
+    });
+</script>
+
+</body>
+</html>

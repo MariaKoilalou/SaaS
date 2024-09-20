@@ -1,12 +1,12 @@
 const DataTypes = require("sequelize").DataTypes;
+const _Session = require("./Session");
 const _Problem = require("./Problem");
 const _Execution = require("./Execution");
-const _Session = require("./Session");
 
 function initModels(sequelize) {
+    const Session = _Session(sequelize, DataTypes);
     const Problem = _Problem(sequelize, DataTypes);
     const Execution = _Execution(sequelize, DataTypes);
-    const Session = _Session(sequelize, DataTypes);
 
     // Define relationships
     Session.hasMany(Problem, {

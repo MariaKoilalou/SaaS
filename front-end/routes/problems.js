@@ -9,4 +9,6 @@ router.post('/submit', problemsController.handleSubmitProblem);
 
 router.get('/show', problemsController.browseProblems);
 
+router.get('/manage/:executionId', problemsController.showManageProblem);
+
 module.exports = router;

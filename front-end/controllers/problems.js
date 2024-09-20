@@ -16,7 +16,6 @@ exports.renderSubmitProblemForm = (req, res) => {
     });
 };
 
-// POST request to handle form submission
 exports.handleSubmitProblem = async (req, res) => {
     const url = `http://submit_problem_service:4001/submit`;
 
@@ -67,27 +66,7 @@ exports.handleSubmitProblem = async (req, res) => {
         // Send the request to the submit problem microservice
         const response = await axios.post(url, payload);
 
-        // Handle successful response
-        if (response.status === 200) {
-            console.log('Problem submitted successfully, deducting balance...');
-            req.session.balance -= 1;
-            await req.session.save();  // Save updated balance in session
-
-            // Retrieve executionId and executionResult from response
-            const executionId = response.data.executionResult.executionId;
-            const executionResult = response.data.executionResult;
-
-            console.log('Execution started with ID:', executionId);
-
-            // Redirect to the manageProblem.ejs page with execution data
-            return res.render('manageProblem.ejs', {
-                sessionBalance: req.session.balance || 0,
-                executionId: executionId,
-                executionResult: executionResult,
-                error: null,
-                message: 'Problem submitted and execution started successfully!'
-            });
-        } else {
+        if (response.status !== 200) {
             // Handle failure to submit problem
             console.log('Problem submission failed:', response.data.message);
             return res.render('submitProblem.ejs', {
@@ -95,6 +74,18 @@ exports.handleSubmitProblem = async (req, res) => {
                 error: `Failed to submit problem: ${response.data.message}`,
                 message: null
             });
+        } else {
+            // Extract the executionId from the response
+            const executionId = response.data.executionId;
+
+            console.log('Received executionId from submit_problem_service:', executionId);
+
+            // Deduct 1 from session balance
+            req.session.balance -= 1;
+            await req.session.save();  // Save updated balance in session
+
+            // Redirect to the manageProblem.ejs page with the executionId
+            return res.redirect(`manage/${executionId}`);
         }
     } catch (error) {
         // Handle any errors during the process
@@ -132,4 +123,14 @@ exports.browseProblems = async (req, res) => {
         req.flash('error', 'Error fetching problems. Please try again later.');
         res.redirect('/'); // Redirect the user to a default or error page
     }
+};
+
+exports.showManageProblem = (req, res) => {
+    const executionId = req.params.executionId;
+
+    // Render the manageProblem.ejs page and pass the executionId
+    res.render('manageProblem.ejs', {
+        executionId: executionId,
+        sessionBalance: req.session.balance || 0
+    });
 };

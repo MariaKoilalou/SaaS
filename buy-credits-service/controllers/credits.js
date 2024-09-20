@@ -1,8 +1,6 @@
-const axios = require('axios');
-const encrypt = require('../utils/encrypt'); // Assuming encrypt is a utility function you've created
 const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
-var initModels = require("../models/init-models");
-var models = initModels(sequelize);
+const initModels = require("../models/init-models");
+const models = initModels(sequelize);
 const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
@@ -50,6 +48,8 @@ exports.buy = async (req, res) => {
                     newBalance: newBalance
                 });
             });
+
+
         });
     } catch (error) {
         console.error('buy: Error adding credits:', error);
