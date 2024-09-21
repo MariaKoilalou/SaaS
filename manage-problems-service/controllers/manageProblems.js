@@ -9,7 +9,7 @@ exports.getProblem = async (req, res) => {
     const sessionId = req.body.sessionId;
     const newBalance = req.body.newBalance;
 
-    const browseServiceUrl = 'http://browse_problems_service:4003/problems'; // Browse Problem Service URL
+    const browseServiceUrl = 'http://browse_problems_service:4003/problems';
 
     try {
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
@@ -45,7 +45,6 @@ exports.getProblem = async (req, res) => {
 
         console.log('Execution created with ID:', newExecution.id);
 
-        // Respond with execution started status
         res.status(200).json({
             message: 'Problem created and execution started.',
             executionId: newExecution.id
@@ -62,7 +61,7 @@ exports.getProblem = async (req, res) => {
 
 // Helper function to start execution in OR-Tools Service and poll for status updates
 async function startExecutionAndPoll(problem, execution, browseServiceUrl) {
-    const ortoolsUrl = `http://ortools_service:4008/solver`; // OR-Tools service execution URL
+    const ortoolsUrl = `http://ortools_service:4008/solver`;
 
     try {
         // Step 1: Start execution by sending problem details to OR-Tools Service
@@ -182,23 +181,23 @@ exports.deleteProblem = async (req, res) => {
             return res.status(404).json({ message: 'Problem not found.' });
         }
 
-        const execution = await models.Execution.findOne({ where: { problemId: problemId } });
-
-        if (execution && execution.status === 'pending') {
-            console.log(`Cancelling execution for problem ${problemId}.`);
-
-            io.getIO().emit('executionCancelled', {
-                message: `Execution for problem ID ${problemId} has been cancelled.`,
-                executionId: execution.id
-            });
-
-            await execution.update({
-                status: 'cancelled',
-                result: 'Execution was cancelled by the user.'
-            });
-
-            console.log(`Execution for problem ${problemId} cancelled.`);
-        }
+        // const execution = await models.Execution.findOne({ where: { problemId: problemId } });
+        //
+        // if (execution && execution.status === 'pending') {
+        //     console.log(`Cancelling execution for problem ${problemId}.`);
+        //
+        //     io.getIO().emit('executionCancelled', {
+        //         message: `Execution for problem ID ${problemId} has been cancelled.`,
+        //         executionId: execution.id
+        //     });
+        //
+        //     await execution.update({
+        //         status: 'cancelled',
+        //         result: 'Execution was cancelled by the user.'
+        //     });
+        //
+        //     console.log(`Execution for problem ${problemId} cancelled.`);
+        // }
 
         await problem.destroy();
 

@@ -5,7 +5,6 @@ var models = initModels(sequelize);
 const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
-// GET request to render the form
 exports.renderSubmitProblemForm = (req, res) => {
     console.log('Rendering form - session balance:', req.session.balance);
 
@@ -60,7 +59,6 @@ exports.handleSubmitProblem = async (req, res) => {
             };
         }
 
-        // Send the request to the submit problem microservice
         const response = await axios.post(url, payload);
 
         if (response.status !== 200) {
@@ -131,7 +129,6 @@ exports.showManageProblem = (req, res) => {
     });
 };
 
-// Delete problem (send problemId to manage problems service)
 exports.deleteProblem = async (req, res) => {
     const problemId = req.params.problemId;
     const manageServiceUrl = `http://manage_problems_service:4004/delete/${problemId}`;

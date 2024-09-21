@@ -95,13 +95,13 @@
                         <% } %>
                     </td>
                     <td class="problem-actions">
-                        <a href="/problems/manage/<%= problem.problemDetails.problemId %>" class="btn btn-sm btn-primary">View/Edit</a>
+                        <a href="/problems/manage/<%= problem.problemId %>" class="btn btn-sm btn-primary">View/Edit</a>
                         <% if (problem.problemDetails.status === 'executed') { %>
-                            <a href="/problems/results/<%= problem.problemDetails.problemId %>" class="btn btn-sm btn-info">View Results</a>
+                            <a href="/problems/results/<%= problem.problemId %>" class="btn btn-sm btn-info">View Results</a>
                         <% } else { %>
                             <button class="btn btn-sm btn-secondary" disabled>View Results</button>
                         <% } %>
-                        <a href="/problems/delete/<%= problem.problemDetails.problemId %>" class="btn btn-sm btn-danger">Delete</a>
+                        <a href="/problems/delete/<%= problem.problemId %>" class="btn btn-sm btn-danger">Delete</a>
                     </td>
                 </tr>
             <% }); %>
