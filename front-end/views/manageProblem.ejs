@@ -72,7 +72,7 @@
     <!-- Title Bar -->
     <div class="title-bar">
         <h3>Problem Submission Management</h3>
-        <p><scenario id="scenario-id"></scenario> | <solver id="solver-id"></solver> | <creator id="creator-id"></creator> | <status id="status-id">Status: <%= problemStatus %></status></p>
+        <p>Scenario ID: <%= scenarioId %> | Solver ID: <%= solverId %> | Creator: <%= creator %> | Status: <span id="status"><%= problemStatus %></span></p>
     </div>
 
     <!-- Metadata Table -->
@@ -86,7 +86,6 @@
         </tr>
         </thead>
         <tbody>
-        <!-- Dynamic metadata rows here -->
         <% metadata.forEach(meta => { %>
             <tr>
                 <td><%= meta.name %></td>
@@ -111,7 +110,6 @@
             </tr>
             </thead>
             <tbody>
-            <!-- Dynamic input data rows -->
             <% inputData.forEach(data => { %>
                 <tr>
                     <td><%= data.datasetId %></td>
@@ -138,6 +136,8 @@
     <div class="text-center">
         <button class="btn btn-success">Done</button>
     </div>
+
+    <div id="executionUpdates"></div>
 </div>
 
 <!-- Footer -->
@@ -153,21 +153,35 @@
     </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Add charting or other interactivity here -->
 <script>
-    // Initialize any charting for uploaded datasets
-    inputData.forEach(data => {
-        if (data.uploaded) {
-            initializeChart('chart-' + data.datasetId, data.chartData);
-        }
-    });
+    // Polling for execution status every 5 seconds
+    const executionId = '<%= executionId %>';
 
-    function initializeChart(chartId, data) {
-        // Initialize charts using Chart.js, D3.js, or any other library
+    function checkExecutionStatus() {
+        fetch(`/problems/manage/${executionId}/status`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Execution status:', data.status);
+                document.getElementById('status').textContent = data.status;
+
+                // Update result if execution is completed
+                if (data.status === 'completed' && data.result) {
+                    document.getElementById('executionUpdates').innerHTML += `<p>Execution Completed: ${JSON.stringify(data.result)}</p>`;
+                    clearInterval(pollingInterval);
+                }
+
+                // Handle failure
+                if (data.status === 'failed') {
+                    document.getElementById('executionUpdates').innerHTML += `<p>Execution Failed: ${data.error}</p>`;
+                    clearInterval(pollingInterval);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching execution status:', error);
+            });
     }
+
+    const pollingInterval = setInterval(checkExecutionStatus, 5000);
 </script>
 </body>
 </html>

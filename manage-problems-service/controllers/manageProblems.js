@@ -74,10 +74,11 @@ exports.getProblem = async (req, res) => {
             console.error('Failed to notify Browse Problem Service:', error.message);
         }
 
-        // Inform clients that the execution has started
+        // Inform clients via WebSocket that the execution has started
         io.getIO().emit('executionStart', {
             message: 'Execution started for problem ID: ' + newProblem.id,
-            executionId: newExecution.id
+            executionId: newExecution.id,
+            status: 'pending'  // Notify with "pending" status
         });
 
         // Start the problem execution by sending the problem data to the OR-Tools microservice
@@ -100,6 +101,13 @@ exports.getProblem = async (req, res) => {
 
             console.log('Execution completed for ID:', newExecution.id);
 
+            // Notify the front-end via WebSocket
+            io.getIO().emit('executionCompleted', {
+                message: 'Execution completed for problem ID: ' + newProblem.id,
+                executionId: newExecution.id,
+                result: executionResponse.data
+            });
+
             // Notify browse problem service that execution is completed
             await axios.patch(`${url}`, {
                 status: 'completed',
@@ -117,6 +125,13 @@ exports.getProblem = async (req, res) => {
                 result: execError.message
             });
 
+            // Notify the front-end via WebSocket about the failure
+            io.getIO().emit('executionFailed', {
+                message: 'Execution failed for problem ID: ' + newProblem.id,
+                executionId: newExecution.id,
+                error: execError.message
+            });
+
             // Notify the browse problem service that the execution failed
             await axios.patch(`${url}`, {
                 status: 'failed',
@@ -129,5 +144,25 @@ exports.getProblem = async (req, res) => {
     } catch (error) {
         console.error('Error in Manage Problem Service:', error.message);
         return res.status(500).json({ message: 'Internal server error. Unable to save the problem.' });
+    }
+};
+
+exports.getExecutionStatus = async (req, res) => {
+    const executionId = req.params.executionId;
+
+    try {
+        // Fetch execution details from the database
+        const execution = await models.Execution.findByPk(executionId);
+
+        if (!execution) {
+            return res.status(404).json({ message: 'Execution not found' });
+        }
+
+        res.json({
+            status: execution.status,
+            result: execution.result
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching execution status', error: error.message });
     }
 };
