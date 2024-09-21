@@ -10,6 +10,9 @@ const PROBLEMS_PER_PAGE = 7;
 exports.show = async (req, res) => {
     const sessionId = req.body.sessionId;
     const newBalance = req.body.newBalance;
+    const currentPage = req.query.page || 1; // Get current page from query parameters or default to 1
+    const offset = (currentPage - 1) * PROBLEMS_PER_PAGE; // Calculate offset for pagination
+
     console.log('show: Received request for sessionId:', sessionId);
 
     try {
@@ -25,54 +28,91 @@ exports.show = async (req, res) => {
             });
         }
 
-            // Fetch problem data based on session
-            const totalProblems = await models.Problem.count({
-                where: { sessionId: sessionId }
-            });
+        // Fetch total problem count for the session
+        const totalProblems = await models.Problem.count({
+            where: { sessionId: sessionId }
+        });
 
-            if (totalProblems === 0) {
-                return res.status(200).json({
-                    pagination: {
-                        totalProblems: 0,
-                        totalPages: 1,
-                        problemsPerPage: PROBLEMS_PER_PAGE
-                    },
-                    problems: []
-                });
-            }
-
-            const totalPages = Math.ceil(totalProblems / PROBLEMS_PER_PAGE);
-
-            const problems = await models.Problem.findAll({
-                where: { sessionId: sessionId },
-                order: [['dateCreated', 'ASC']]
-            });
-
-            const problemsArr = problems.map(problem => ({
-                id: problem.id,
-                title: problem.title,
-                description: problem.description,
-                dateCreated: new Intl.DateTimeFormat('en-US', {
-                    hour: 'numeric',
-                    minute: 'numeric',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                    weekday: 'long'
-                }).format(new Date(problem.dateCreated))
-            }));
-
+        if (totalProblems === 0) {
             return res.status(200).json({
                 pagination: {
-                    totalProblems: totalProblems,
-                    totalPages: totalPages,
-                    problemsPerPage: PROBLEMS_PER_PAGE
+                    totalProblems: 0,
+                    totalPages: 1,
+                    problemsPerPage: PROBLEMS_PER_PAGE,
+                    currentPage: 1
                 },
-                problems: problemsArr
+                problems: []
             });
+        }
+
+        const totalPages = Math.ceil(totalProblems / PROBLEMS_PER_PAGE);
+
+        // Fetch paginated problem data based on session
+        const problems = await models.Problem.findAll({
+            where: { sessionId: sessionId },
+            offset: offset,
+            limit: PROBLEMS_PER_PAGE,
+            order: [['dateCreated', 'ASC']]
+        });
+
+        const problemsArr = problems.map(problem => ({
+            id: problem.id,
+            problemType: problem.problemType,
+            problemDetails: problem.problemDetails,
+            status: problem.status, // Assuming 'status' is a field in the Problem model
+            dateCreated: new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric',
+                minute: 'numeric',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                weekday: 'long'
+            }).format(new Date(problem.dateCreated))
+        }));
+
+        // Send the response with problems and pagination data
+        return res.status(200).json({
+            pagination: {
+                totalProblems: totalProblems,
+                totalPages: totalPages,
+                problemsPerPage: PROBLEMS_PER_PAGE,
+                currentPage: parseInt(currentPage, 10)
+            },
+            problems: problemsArr
+        });
+
     } catch (err) {
         console.error('Error fetching problems:', err);
         return res.status(500).json({ message: 'Internal server error.', type: 'error' });
+    }
+};
+
+exports.updateProblem = async (req, res) => {
+    const problemId = req.params.problemId;
+    const { status, result } = req.body;
+
+    console.log(`updateProblem: Received status update for problem ${problemId} with status ${status}`);
+
+    try {
+        // Find the problem in the database
+        const problem = await models.Problem.findOne({ where: { id: problemId } });
+
+        if (!problem) {
+            return res.status(404).json({ message: 'Problem not found.' });
+        }
+
+        // Update the problem's status and result
+        await problem.update({
+            status: status,
+            result: result
+        });
+
+        console.log(`Problem ${problemId} updated successfully with status ${status}`);
+        return res.status(200).json({ message: `Problem ${problemId} updated successfully.` });
+
+    } catch (error) {
+        console.error(`Error updating problem ${problemId}:`, error.message);
+        return res.status(500).json({ message: 'Internal server error. Unable to update the problem.' });
     }
 };
 
@@ -123,5 +163,25 @@ exports.getProblem = async (req, res) => {
     }
 };
 
+exports.deleteProblem = async (req, res) => {
+    const problemId = req.params.problemId;
 
+    try {
+        const problem = await models.Problem.findOne({ where: { id: problemId } });
+
+        if (!problem) {
+            return res.status(404).json({ message: 'Problem not found.' });
+        }
+
+        await models.Problem.destroy({ where: { id: problemId } });
+
+        console.log(`Problem ${problemId} deleted from Browse Problem Service.`);
+
+        return res.status(200).json({ message: `Problem ${problemId} deleted successfully from Browse Problem Service.` });
+
+    } catch (error) {
+        console.error(`Error deleting problem ${problemId} from Browse Problem Service:`, error.message);
+        return res.status(500).json({ message: 'Internal server error. Could not delete the problem.' });
+    }
+};
 

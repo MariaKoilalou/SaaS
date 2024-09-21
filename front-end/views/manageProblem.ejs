@@ -72,30 +72,7 @@
     <!-- Title Bar -->
     <div class="title-bar">
         <h3>Problem Submission Management</h3>
-        <p>Scenario ID: <%= scenarioId %> | Solver ID: <%= solverId %> | Creator: <%= creator %> | Status: <span id="status"><%= problemStatus %></span></p>
     </div>
-
-    <!-- Metadata Table -->
-    <table class="metadata-table">
-        <thead>
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Value</th>
-            <th>Description</th>
-        </tr>
-        </thead>
-        <tbody>
-        <% metadata.forEach(meta => { %>
-            <tr>
-                <td><%= meta.name %></td>
-                <td><%= meta.type %></td>
-                <td><%= meta.value %></td>
-                <td><%= meta.description %></td>
-            </tr>
-        <% }) %>
-        </tbody>
-    </table>
 
     <!-- Input Data Section -->
     <div class="input-data-section">
@@ -109,32 +86,7 @@
                 <th>Actions</th>
             </tr>
             </thead>
-            <tbody>
-            <% inputData.forEach(data => { %>
-                <tr>
-                    <td><%= data.datasetId %></td>
-                    <td><%= data.uploaded ? 'Yes' : 'No' %></td>
-                    <td>
-                        <% if (data.uploaded) { %>
-                            <div class="result-chart" id="chart-<%= data.datasetId %>"></div>
-                        <% } else { %>
-                            <div class="upload-box">Upload a file</div>
-                        <% } %>
-                    </td>
-                    <td class="template-btns">
-                        <button class="btn btn-outline-primary btn-sm">Template</button>
-                        <button class="btn btn-outline-success btn-sm">Upload</button>
-                        <button class="btn btn-outline-info btn-sm">Download</button>
-                    </td>
-                </tr>
-            <% }) %>
-            </tbody>
         </table>
-    </div>
-
-    <!-- Done Button -->
-    <div class="text-center">
-        <button class="btn btn-success">Done</button>
     </div>
 
     <div id="executionUpdates"></div>

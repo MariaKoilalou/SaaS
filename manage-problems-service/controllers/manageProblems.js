@@ -1,23 +1,19 @@
 const axios = require('axios');
 const sequelize = require('../utils/database');
-var initModels = require("../models/init-models");
-var models = initModels(sequelize);
-const session = require('express-session');
-const SequelizeStore = require('connect-session-sequelize')(session.Store);
+const initModels = require("../models/init-models");
+const models = initModels(sequelize);
 const io = require('../utils/socket'); // Assuming you have a socket setup
 
+// Function to create a problem and start execution
 exports.getProblem = async (req, res) => {
-    const newBalance = req.body.newBalance;
     const sessionId = req.body.sessionId;
-    const url = 'http://browse_problems_service:4003/problems';
+    const newBalance = req.body.newBalance;
 
-    console.log('getProblem: Received request for sessionId:', sessionId);
+    const browseServiceUrl = 'http://browse_problems_service:4003/problems'; // Browse Problem Service URL
 
     try {
-        // Check if the session exists in the Session table
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
 
-        // If the session does not exist, create a new one
         if (!sessionData) {
             console.log(`Session ${sessionId} not found, creating a new one.`);
             sessionData = await models.Session.create({
@@ -27,125 +23,131 @@ exports.getProblem = async (req, res) => {
             });
         }
 
-        // Extract problem data from the request body
-        const problemData = req.body;
-
-        // Validate the incoming problem data
-        if (!problemData.problemType || !problemData.sessionId) {
-            return res.status(400).json({ message: 'Problem type and sessionId are required' });
-        }
-
-        // Save the problem data in the database
         const newProblem = await models.Problem.create({
-            problemType: problemData.problemType,
-            sessionId: req.body.sessionId,
-            problemDetails: problemData,  // Store the entire problem data as JSON
+            problemType: req.body.problemType,
+            sessionId: sessionId,
+            problemDetails: req.body
         });
 
-        console.log('Problem saved in Manage Problem Service:', newProblem);
-
-        // Create an execution entry in the database with a "pending" status before starting execution
         const newExecution = await models.Execution.create({
-            problemId: newProblem.id,  // Link the execution to the problem
-            status: 'pending',  // Set initial status to pending
-            result: null  // No result yet, it will be updated after execution
+            problemId: newProblem.id,
+            status: 'pending',
+            result: null
+        });
+
+        await axios.post(browseServiceUrl, {
+            problemId: newProblem.id,
+            sessionId: newProblem.sessionId,
+            status: 'pending',
+            problemType: newProblem.problemType,
+            details: newProblem.problemDetails
         });
 
         console.log('Execution created with ID:', newExecution.id);
 
-        // **Respond immediately to Submit Problem Service**
+        // Respond with execution started status
         res.status(200).json({
-            message: 'Execution started successfully',
+            message: 'Problem created and execution started.',
             executionId: newExecution.id
         });
 
-        // Notify the browse problem service about the new problem submission
-        try {
-            await axios.post(url, {
-                problemId: newProblem.id,
-                newBalance: req.body.newBalance,
-                sessionId: newProblem.sessionId,
-                status: 'pending',
-                problemType: newProblem.problemType,
-                details: newProblem.problemDetails
-            });
-            console.log('New problem notified to Browse Problem Service');
-        } catch (error) {
-            console.error('Failed to notify Browse Problem Service:', error.message);
-        }
+        await startExecutionAndPoll(newProblem, newExecution, browseServiceUrl);
 
-        // Inform clients via WebSocket that the execution has started
-        io.getIO().emit('executionStart', {
-            message: 'Execution started for problem ID: ' + newProblem.id,
-            executionId: newExecution.id,
-            status: 'pending'  // Notify with "pending" status
-        });
-
-        // Start the problem execution by sending the problem data to the OR-Tools microservice
-        const ortoolsUrl = 'http://ortools_service:4008/solver';  // OR-Tools microservice URL
-
-        console.log('Sending problem to OR-Tools microservice for execution...');
-
-        try {
-            const executionResponse = await axios.post(ortoolsUrl, {
-                problemType: problemData.problemType,
-                problemDetails: problemData,
-                sessionId: sessionId
-            });
-
-            // Update the execution entry in the database with the result
-            await newExecution.update({
-                status: 'completed',  // Update status to completed
-                result: executionResponse.data || null  // Store the execution result
-            });
-
-            console.log('Execution completed for ID:', newExecution.id);
-
-            // Notify the front-end via WebSocket
-            io.getIO().emit('executionCompleted', {
-                message: 'Execution completed for problem ID: ' + newProblem.id,
-                executionId: newExecution.id,
-                result: executionResponse.data
-            });
-
-            // Notify browse problem service that execution is completed
-            await axios.patch(`${url}`, {
-                status: 'completed',
-                result: executionResponse.data
-            });
-
-            console.log('Execution result updated in Browse Problem Service.');
-
-        } catch (execError) {
-            console.error('Error during OR-Tools execution:', execError.message);
-
-            // Mark the execution as failed in the database
-            await newExecution.update({
-                status: 'failed',
-                result: execError.message
-            });
-
-            // Notify the front-end via WebSocket about the failure
-            io.getIO().emit('executionFailed', {
-                message: 'Execution failed for problem ID: ' + newProblem.id,
-                executionId: newExecution.id,
-                error: execError.message
-            });
-
-            // Notify the browse problem service that the execution failed
-            await axios.patch(`${url}`, {
-                status: 'failed',
-                result: execError.message
-            });
-
-            console.log('Execution failure notified to Browse Problem Service.');
-        }
 
     } catch (error) {
         console.error('Error in Manage Problem Service:', error.message);
         return res.status(500).json({ message: 'Internal server error. Unable to save the problem.' });
     }
 };
+
+// Helper function to start execution in OR-Tools Service and poll for status updates
+async function startExecutionAndPoll(problem, execution, browseServiceUrl) {
+    const ortoolsUrl = `http://ortools_service:4008/solver`; // OR-Tools service execution URL
+
+    try {
+        // Step 1: Start execution by sending problem details to OR-Tools Service
+        const ortoolsResponse = await axios.post(ortoolsUrl, {
+            problemType: problem.problemType,
+            problemDetails: problem.problemDetails,
+            sessionId: problem.sessionId,
+            executionId: execution.id
+        });
+
+        // Confirm that execution has started
+        if (ortoolsResponse.data && ortoolsResponse.data.executionId) {
+            console.log(`Execution started for ID ${execution.id} in OR-Tools.`);
+        } else {
+            throw new Error('Failed to start execution in OR-Tools.');
+        }
+
+        await pollExecutionStatus(execution, browseServiceUrl);
+
+    } catch (execError) {
+        console.error('Error starting execution in OR-Tools:', execError.message);
+
+        // Step 3: Mark the execution as failed and notify Browse Problem Service
+        await execution.update({ status: 'failed', result: execError.message });
+
+        await axios.patch(`${browseServiceUrl}/${problem.id}`, {
+            status: 'failed',
+            result: execError.message
+        });
+
+        // Notify the frontend about the failure
+        io.getIO().emit('executionFailed', {
+            message: `Execution failed for problem ID: ${problem.id}`,
+            executionId: execution.id,
+            error: execError.message
+        });
+    }
+}
+
+// Poll OR-Tools service for execution status updates
+async function pollExecutionStatus(execution, browseServiceUrl) {
+    const ortoolsStatusUrl = `http://ortools_service:4008/status/${execution.id}`;
+    let pollInterval = 5000; // Poll every 5 seconds
+
+    // Polling loop
+    const poll = setInterval(async () => {
+        try {
+            // Step 1: Fetch the current status from OR-Tools
+            const response = await axios.get(ortoolsStatusUrl);
+            const status = response.data.status;
+            const result = response.data.result || null;
+
+            // Step 2: Update the status in Manage Problem Service
+            await execution.update({
+                status: status,
+                result: result
+            });
+
+            // Step 3: Notify the Browse Problem Service about the status update
+            await axios.patch(`${browseServiceUrl}/${execution.problemId}`, {
+                status: status,
+                result: result
+            });
+
+            // Emit WebSocket message to notify frontend of the status update
+            io.getIO().emit('executionStatusUpdate', {
+                message: `Execution updated for problem ID: ${execution.problemId}`,
+                executionId: execution.id,
+                status: status
+            });
+
+            // Step 4: Stop polling if execution is completed or failed
+            if (status === 'completed' || status === 'failed') {
+                clearInterval(poll);
+                console.log(`Execution ${execution.id} ${status}. Polling stopped.`);
+            }
+
+        } catch (pollError) {
+            console.error('Error polling OR-Tools Service:', pollError.message);
+            // You may want to stop polling after too many errors
+        }
+    }, pollInterval);
+}
+
+
 
 exports.getExecutionStatus = async (req, res) => {
     const executionId = req.params.executionId;
@@ -166,3 +168,56 @@ exports.getExecutionStatus = async (req, res) => {
         res.status(500).json({ message: 'Error fetching execution status', error: error.message });
     }
 };
+
+exports.deleteProblem = async (req, res) => {
+    const problemId = req.params.problemId;
+    const browseServiceUrl = `http://browse_problems_service:4003/problems/delete/${problemId}`;
+
+    console.log(`Received request to cancel and delete problem with ID: ${problemId}`);
+
+    try {
+        const problem = await models.Problem.findByPk(problemId);
+
+        if (!problem) {
+            return res.status(404).json({ message: 'Problem not found.' });
+        }
+
+        const execution = await models.Execution.findOne({ where: { problemId: problemId } });
+
+        if (execution && execution.status === 'pending') {
+            console.log(`Cancelling execution for problem ${problemId}.`);
+
+            io.getIO().emit('executionCancelled', {
+                message: `Execution for problem ID ${problemId} has been cancelled.`,
+                executionId: execution.id
+            });
+
+            await execution.update({
+                status: 'cancelled',
+                result: 'Execution was cancelled by the user.'
+            });
+
+            console.log(`Execution for problem ${problemId} cancelled.`);
+        }
+
+        await problem.destroy();
+
+        try {
+            await axios.delete(`${browseServiceUrl}`);
+            console.log(`Problem ${problemId} deleted from Browse Problem Service.`);
+        } catch (browseError) {
+            console.error(`Failed to delete problem ${problemId} from Browse Problem Service:`, browseError.message);
+            return res.status(500).json({ message: `Failed to delete problem from Browse Problem Service: ${browseError.message}` });
+        }
+
+
+        return res.status(200).json({
+            message: `Problem ${problemId} and its execution have been deleted successfully.`
+        });
+
+    } catch (error) {
+        console.error(`Error deleting problem ${problemId}:`, error.message);
+        return res.status(500).json({ message: `Error deleting problem: ${error.message}` });
+    }
+};
+

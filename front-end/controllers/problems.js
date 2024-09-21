@@ -60,9 +60,6 @@ exports.handleSubmitProblem = async (req, res) => {
             };
         }
 
-        // Log the payload before sending the request
-        console.log('Sending POST request to submit problem microservice with payload:', payload);
-
         // Send the request to the submit problem microservice
         const response = await axios.post(url, payload);
 
@@ -98,7 +95,6 @@ exports.handleSubmitProblem = async (req, res) => {
     }
 };
 
-// Browse problems logic
 exports.browseProblems = async (req, res) => {
     const url = `http://browse_problems_service:4003/show`;
 
@@ -107,7 +103,8 @@ exports.browseProblems = async (req, res) => {
     try {
         // Send a POST request to fetch problems associated with this sessionId
         const response = await axios.post(url, {
-            sessionId: req.session.id
+            sessionId: req.session.id,
+            page: req.query.page || 1  // Handling pagination
         });
 
         console.log('Received problems:', response.data.problems);
@@ -128,9 +125,23 @@ exports.browseProblems = async (req, res) => {
 exports.showManageProblem = (req, res) => {
     const executionId = req.params.executionId;
 
-    // Render the manageProblem.ejs page and pass the executionId
     res.render('manageProblem.ejs', {
-        executionId: executionId,
+        executionId,
         sessionBalance: req.session.balance || 0
     });
+};
+
+// Delete problem (send problemId to manage problems service)
+exports.deleteProblem = async (req, res) => {
+    const problemId = req.params.problemId;
+    const manageServiceUrl = `http://manage_problems_service:4004/delete/${problemId}`;
+
+    try {
+        await axios.post(manageServiceUrl);
+        req.flash('success', `Problem ${problemId} deleted successfully.`);
+        return res.redirect('/show');
+    } catch (error) {
+        req.flash('error', `Error deleting problem: ${error.message}`);
+        return res.redirect('/');
+    }
 };
