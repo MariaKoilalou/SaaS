@@ -1,5 +1,5 @@
 const axios = require('axios');
-const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
+const sequelize = require('../utils/database');
 var initModels = require("../models/init-models");
 var models = initModels(sequelize);
 const session = require('express-session');
@@ -131,4 +131,3 @@ exports.getProblem = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error. Unable to save the problem.' });
     }
 };
-

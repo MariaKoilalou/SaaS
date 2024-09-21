@@ -1,96 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Browse Problems - solveMyProblem</title>
+    <title>All Submissions - solveME</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/assets/css/styles.css">
-    <link rel="stylesheet" href="/assets/css/footer.css">
-    <link rel="stylesheet" href="/assets/css/header.css">
     <style>
-        #main-div {
-            padding-top: 120px; /* Ensure the content starts below the fixed header */
-            padding-bottom: 100px; /* Ensure the content is not hidden by the footer */
+        /* Adjust styling to match the prototype */
+        body {
+            font-family: Arial, sans-serif;
         }
-        .problem-list {
-            margin-top: 20px;
+
+        header, footer {
+            background-color: #f8f9fa;
+            padding: 10px;
         }
-        .problem-list-item {
-            margin-bottom: 15px;
+
+        #activity-table th, #activity-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
         }
-        .pagination-container {
-            margin-top: 30px;
-            display: flex;
-            justify-content: center;
+
+        .action-btn {
+            margin-right: 5px;
+        }
+
+        .status-ready {
+            color: green;
+        }
+
+        .status-not-ready {
+            color: red;
+        }
+
+        .status-executed {
+            color: blue;
+        }
+
+        .footer-basic {
+            text-align: center;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+
+        .footer-basic ul {
+            padding: 0;
+            list-style: none;
+        }
+
+        .footer-basic ul a {
+            color: #888;
+            text-decoration: none;
         }
     </style>
 </head>
+
 <body>
-<!-- Header with logo and system info -->
-<header>
-    <div class="container">
-        <img id="small_logo" src="/assets/img/small_logo.png" alt="solveME logo" class="img-fluid">
-        <p>System info: date/time, health, etc.</p>
-    </div>
+<!-- Header -->
+<header class="container">
+    <img id="small_logo" src="/assets/img/small_logo.png" alt="solveME logo" style="float:left;">
+    <p style="float:right;">System info: date/time, health, etc.</p>
+    <div style="clear:both;"></div>
 </header>
 
-<div id="main-div" class="container">
-    <h2>Browse Problems</h2>
-
-    <!-- Check if there are any problems -->
-    <% if (problems.length === 0) { %>
-        <div class="alert alert-info">
-            No problems found for this session.
-        </div>
-    <% } else { %>
-        <!-- Problem List -->
-        <ul class="list-group problem-list">
-            <% problems.forEach(problem => { %>
-                <li class="list-group-item problem-list-item">
-                    <h5>Problem ID: <%= problem.id %></h5>
-                    <p><strong>Title:</strong> <%= problem.title %></p>
-                    <p><strong>Description:</strong> <%= problem.description %></p>
-                    <p><strong>Date Created:</strong> <%= problem.dateCreated %></p>
-                </li>
-            <% }); %>
-        </ul>
-
-        <!-- Pagination -->
-        <div class="pagination-container">
-            <ul class="pagination">
-                <% if (pagination.hasPrevPage) { %>
-                    <li class="page-item">
-                        <a class="page-link" href="?page=<%= pagination.prevPage %>">Previous</a>
-                    </li>
-                <% } %>
-                <li class="page-item active">
-                    <span class="page-link"><%= pagination.currentPage %></span>
-                </li>
-                <% if (pagination.hasNextPage) { %>
-                    <li class="page-item">
-                        <a class="page-link" href="?page=<%= pagination.nextPage %>">Next</a>
-                    </li>
-                <% } %>
-            </ul>
-        </div>
-    <% } %>
+<!-- Main Activity Section -->
+<div class="container mt-5">
+    <h2>Activity</h2>
+    <table id="activity-table" class="table table-bordered">
+        <thead>
+        <tr>
+            <th>Creator</th>
+            <th>Name</th>
+            <th>Created On</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody id="problem-list">
+        <!-- Dynamic content will be added here -->
+        </tbody>
+    </table>
 </div>
 
 <!-- Footer -->
 <footer class="footer-basic">
-    <div class="container text-center">
-        <ul class="list-inline">
-            <li class="list-inline-item"><a href="/">Home</a></li>
-            <li class="list-inline-item"><a href="/credits/">Credits</a></li>
-            <li class="list-inline-item"><a href="/problems/">Submit</a></li>
-            <li class="list-inline-item"><a href="/problems/show">Submissions</a></li>
-        </ul>
-        <p class="copyright">Company Name © 2021</p>
-    </div>
+    <ul class="list-inline">
+        <li class="list-inline-item"><a href="/">Home</a></li>
+        <li class="list-inline-item"><a href="/credits/">Credits</a></li>
+        <li class="list-inline-item"><a href="/problems/">Submit</a></li>
+        <li class="list-inline-item"><a href="/problems/show">Submissions</a></li>
+    </ul>
+    <p class="copyright">solveME © 2024</p>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // JavaScript to dynamically load data and update the activity table
+    document.addEventListener('DOMContentLoaded', function () {
+        const problems = [
+            { creator: 'User1', name: 'Problem A', createdOn: '2024-01-01', status: 'not ready' },
+            { creator: 'User2', name: 'Problem B', createdOn: '2024-01-02', status: 'ready' },
+            { creator: 'User3', name: 'Problem C', createdOn: '2024-01-03', status: 'executed' }
+        ];
+
+        const problemList = document.getElementById('problem-list');
+
+        problems.forEach(problem => {
+            const row = document.createElement('tr');
+
+            // Creator
+            const creatorTd = document.createElement('td');
+            creatorTd.textContent = problem.creator;
+            row.appendChild(creatorTd);
+
+            // Name
+            const nameTd = document.createElement('td');
+            nameTd.textContent = problem.name;
+            row.appendChild(nameTd);
+
+            // Created On
+            const createdTd = document.createElement('td');
+            createdTd.textContent = problem.createdOn;
+            row.appendChild(createdTd);
+
+            // Status
+            const statusTd = document.createElement('td');
+            statusTd.textContent = problem.status;
+            statusTd.classList.add(`status-${problem.status.replace(' ', '-')}`);
+            row.appendChild(statusTd);
+
+            // Actions (view/edit, run, view results, delete)
+            const actionsTd = document.createElement('td');
+            actionsTd.innerHTML = `
+                    <button class="btn btn-primary btn-sm action-btn">View/Edit</button>
+                    <button class="btn btn-success btn-sm action-btn">Run</button>
+                    <button class="btn btn-info btn-sm action-btn">View Results</button>
+                    <button class="btn btn-danger btn-sm action-btn">Delete</button>
+                `;
+            row.appendChild(actionsTd);
+
+            // Append row to table
+            problemList.appendChild(row);
+        });
+    });
+</script>
 </body>
+
 </html>
+

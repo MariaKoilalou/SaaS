@@ -151,8 +151,15 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    document.getElementById('problemType').addEventListener('change', function() {
-        const problemType = this.value;
+    document.getElementById('problemType').addEventListener('change', updateFormSections);
+
+    // Call this function initially when the page loads to display the correct section
+    document.addEventListener('DOMContentLoaded', function() {
+        updateFormSections();
+    });
+
+    function updateFormSections() {
+        const problemType = document.getElementById('problemType').value;
         const vrpParameters = document.getElementById('vrpParameters');
         const lpParameters = document.getElementById('lpParameters');
         const knapsackParameters = document.getElementById('knapsackParameters');
@@ -179,7 +186,8 @@
             document.querySelector('#itemValues').setAttribute('required', 'required');
             document.querySelector('#capacity').setAttribute('required', 'required');
         }
-    });
+    }
+
 </script>
 </body>
 </html>
