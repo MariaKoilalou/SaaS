@@ -16,7 +16,8 @@ exports.renderSubmitProblemForm = (req, res) => {
 };
 
 exports.handleSubmitProblem = async (req, res) => {
-    const url = `http://submit_problem_service:4001/submit`;
+    const submitProblemUrl = `http://submit_problem_service:4001/submit`;
+    const updateCreditsUrl = `http://credits_service:4002/credits/buy`;  // The credits microcontroller URL
 
     console.log('Received a POST request to /submit');
     console.log('Request body:', req.body);
@@ -59,7 +60,7 @@ exports.handleSubmitProblem = async (req, res) => {
             };
         }
 
-        const response = await axios.post(url, payload);
+        const response = await axios.post(submitProblemUrl, payload);
 
         if (response.status !== 200) {
             // Handle failure to submit problem
@@ -78,6 +79,24 @@ exports.handleSubmitProblem = async (req, res) => {
             // Deduct 1 from session balance
             req.session.balance -= 1;
             await req.session.save();  // Save updated balance in session
+            console.log(`${req.session.balance}`);
+
+            // Notify the credits microcontroller to update the balance
+            try {
+                const creditsResponse = await axios.post(updateCreditsUrl, {
+                    sessionId: sessionId,
+                    currentBalance: req.session.balance,
+                    credits: 0,
+                });
+
+                if (creditsResponse.status === 200) {
+                    console.log('Credits updated successfully in credits microcontroller');
+                } else {
+                    console.error('Failed to update credits in credits microcontroller:', creditsResponse.data.message);
+                }
+            } catch (error) {
+                console.error('Error updating credits in credits microcontroller:', error.message);
+            }
 
             // Redirect to the manageProblem.ejs page with the executionId
             return res.redirect(`manage/${executionId}`);
@@ -92,6 +111,7 @@ exports.handleSubmitProblem = async (req, res) => {
         });
     }
 };
+
 
 exports.browseProblems = async (req, res) => {
     const url = `http://browse_problems_service:4003/show`;
@@ -132,11 +152,20 @@ exports.showManageProblem = (req, res) => {
 exports.deleteProblem = async (req, res) => {
     const problemId = req.params.problemId;
     const manageServiceUrl = `http://manage_problems_service:4004/delete/${problemId}`;
+    const browseServiceUrl = `http://browse_problems_service:4003/delete/${problemId}`;
+
+    try {
+        await axios.post(`${browseServiceUrl}`);
+        console.log(`Problem ${problemId} deleted from Browse Problem Service.`);
+    } catch (browseError) {
+        console.error(`Failed to delete problem ${problemId} from Browse Problem Service:`, browseError.message);
+        return res.status(500).json({ message: `Failed to delete problem from Browse Problem Service: ${browseError.message}` });
+    }
 
     try {
         await axios.post(manageServiceUrl);
-        req.flash('success', `Problem ${problemId} deleted successfully.`);
-        return res.redirect('/show');
+        await exports.browseProblems(req, res);
+
     } catch (error) {
         req.flash('error', `Error deleting problem: ${error.message}`);
         return res.redirect('/');

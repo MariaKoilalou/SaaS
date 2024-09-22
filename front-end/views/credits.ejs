@@ -107,9 +107,12 @@
 
 <script>
     // JavaScript to calculate new balance preview
-    const currentBalance = parseFloat(document.getElementById('current-balance').value) || 0;
+    const currentBalanceField = document.getElementById('current-balance');
     const newCreditsInput = document.getElementById('new-credits');
     const previewBalance = document.getElementById('preview-balance');
+
+    // Parse the current balance from the input field
+    const currentBalance = parseFloat(currentBalanceField.value) || 0;
 
     // Update the preview balance when new credits are entered
     newCreditsInput.addEventListener('input', function () {

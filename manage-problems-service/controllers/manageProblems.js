@@ -170,8 +170,6 @@ exports.getExecutionStatus = async (req, res) => {
 
 exports.deleteProblem = async (req, res) => {
     const problemId = req.params.problemId;
-    const browseServiceUrl = `http://browse_problems_service:4003/problems/delete/${problemId}`;
-
     console.log(`Received request to cancel and delete problem with ID: ${problemId}`);
 
     try {
@@ -181,33 +179,26 @@ exports.deleteProblem = async (req, res) => {
             return res.status(404).json({ message: 'Problem not found.' });
         }
 
-        // const execution = await models.Execution.findOne({ where: { problemId: problemId } });
-        //
-        // if (execution && execution.status === 'pending') {
-        //     console.log(`Cancelling execution for problem ${problemId}.`);
-        //
-        //     io.getIO().emit('executionCancelled', {
-        //         message: `Execution for problem ID ${problemId} has been cancelled.`,
-        //         executionId: execution.id
-        //     });
-        //
-        //     await execution.update({
-        //         status: 'cancelled',
-        //         result: 'Execution was cancelled by the user.'
-        //     });
-        //
-        //     console.log(`Execution for problem ${problemId} cancelled.`);
-        // }
+        const execution = await models.Execution.findOne({ where: { problemId: problemId } });
+
+        if (execution && execution.status === 'pending') {
+            console.log(`Cancelling execution for problem ${problemId}.`);
+
+            io.getIO().emit('executionCancelled', {
+                message: `Execution for problem ID ${problemId} has been cancelled.`,
+                executionId: execution.id
+            });
+
+            await execution.update({
+                status: 'cancelled',
+                result: 'Execution was cancelled by the user.'
+            });
+
+            console.log(`Execution for problem ${problemId} cancelled.`);
+        }
 
         await problem.destroy();
 
-        try {
-            await axios.delete(`${browseServiceUrl}`);
-            console.log(`Problem ${problemId} deleted from Browse Problem Service.`);
-        } catch (browseError) {
-            console.error(`Failed to delete problem ${problemId} from Browse Problem Service:`, browseError.message);
-            return res.status(500).json({ message: `Failed to delete problem from Browse Problem Service: ${browseError.message}` });
-        }
 
 
         return res.status(200).json({

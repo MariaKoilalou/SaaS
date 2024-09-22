@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,37 +14,66 @@
             padding-top: 50px;
             padding-bottom: 50px;
         }
+
         .title-bar {
             padding: 10px;
             font-size: 18px;
             font-weight: bold;
             text-align: center;
         }
-        .metadata-table, .input-data-table {
+
+        /* Problem Details Table */
+        .problem-details-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
-            margin-bottom: 20px;
         }
-        .metadata-table th, .metadata-table td, .input-data-table th, .input-data-table td {
+
+        .problem-details-table th,
+        .problem-details-table td {
             border: 1px solid #ccc;
             padding: 8px;
             text-align: left;
         }
-        .metadata-table th, .input-data-table th {
+
+        .problem-details-table th {
             background-color: #f0f0f0;
         }
+
+        /* Input Data Table */
+        .input-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .input-data-table th,
+        .input-data-table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .input-data-table th {
+            background-color: #f0f0f0;
+        }
+
+        /* Actions and template buttons */
         .template-btns {
             display: flex;
             justify-content: space-around;
             gap: 5px;
         }
+
+        /* Result chart */
         .result-chart {
             width: 100%;
             height: 150px;
             border: 1px solid #ccc;
             margin-top: 10px;
         }
+
+        /* Upload box */
         .upload-box {
             width: 100%;
             height: 150px;
@@ -54,11 +84,23 @@
             margin-top: 10px;
             background-color: #f9f9f9;
         }
+
         .upload-box:hover {
             background-color: #e9e9e9;
         }
+
+        /* Buttons */
+        .btn-section {
+            text-align: right;
+            margin-top: 20px;
+        }
+
+        .btn-section button {
+            margin-left: 10px;
+        }
     </style>
 </head>
+
 <body>
 <!-- Header -->
 <header>
@@ -74,6 +116,36 @@
         <h3>Problem Submission Management</h3>
     </div>
 
+    <!-- Problem Details Section -->
+    <div class="problem-details-section">
+        <h4>Problem Details</h4>
+        <table class="problem-details-table">
+            <thead>
+            <tr>
+                <th>Detail Name</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Scenario ID</td>
+                <td>String</td>
+                <td>12345</td>
+                <td>Unique scenario identifier</td>
+            </tr>
+            <tr>
+                <td>Solver ID</td>
+                <td>String</td>
+                <td>solver_001</td>
+                <td>The solver used for this problem</td>
+            </tr>
+            <!-- Add more problem details as needed -->
+            </tbody>
+        </table>
+    </div>
+
     <!-- Input Data Section -->
     <div class="input-data-section">
         <h4>Input Data</h4>
@@ -86,7 +158,38 @@
                 <th>Actions</th>
             </tr>
             </thead>
+            <tbody>
+            <tr>
+                <td>Dataset 1</td>
+                <td>Yes</td>
+                <td>
+                    <div class="result-chart"></div>
+                </td>
+                <td class="template-btns">
+                    <button class="btn btn-sm btn-primary">Template</button>
+                    <button class="btn btn-sm btn-secondary">Upload</button>
+                    <button class="btn btn-sm btn-info">Download</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Dataset 2</td>
+                <td>No</td>
+                <td>
+                    <div class="upload-box">Drag file to upload</div>
+                </td>
+                <td class="template-btns">
+                    <button class="btn btn-sm btn-primary">Template</button>
+                    <button class="btn btn-sm btn-secondary">Upload</button>
+                </td>
+            </tr>
+            </tbody>
         </table>
+    </div>
+
+    <!-- Button Section -->
+    <div class="btn-section">
+        <button class="btn btn-success">Done</button>
+        <button class="btn btn-secondary">Return</button>
     </div>
 
     <div id="executionUpdates"></div>
@@ -136,4 +239,5 @@
     const pollingInterval = setInterval(checkExecutionStatus, 5000);
 </script>
 </body>
+
 </html>

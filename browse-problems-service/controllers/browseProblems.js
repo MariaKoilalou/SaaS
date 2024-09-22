@@ -164,8 +164,6 @@ exports.getProblem = async (req, res) => {
 };
 
 exports.deleteProblem = async (req, res) => {
-    console.log(`Problem ${problemId} is deleting from Browse Problem Service.`);
-
     const problemId = req.params.problemId;
 
     try {
