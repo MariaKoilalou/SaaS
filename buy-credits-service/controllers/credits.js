@@ -6,6 +6,7 @@ exports.getBalance = async (req, res) => {
     const sessionId = req.query.sessionId;  // Get sessionId from query params
 
     try {
+        // Fetch the specific session by sessionId
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
 
         if (!sessionData) {
@@ -22,7 +23,6 @@ exports.getBalance = async (req, res) => {
     }
 };
 
-
 exports.buyCredits = async (req, res) => {
     const creditsToAdd = req.body.credits;
     const sessionId = req.body.sessionId;
@@ -34,27 +34,19 @@ exports.buyCredits = async (req, res) => {
     console.log('buy: Received request. Session ID:', sessionId, 'Credits to add:', creditsToAdd, 'Current Balance:', currentBalanceNum);
 
     try {
-        // Find session by sessionId
+        // Check if the session exists in the Session table
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
         console.log('Session data found:', sessionData);
 
-        // If session doesn't exist, create a new one
+        // If session doesn't exist, create it
         if (!sessionData) {
             console.log(`Session ${sessionId} not found, creating a new one.`);
-            const newBalance = Number(creditsToAdd);  // Initial balance is equal to credits added
-
             sessionData = await models.Session.create({
                 sid: sessionId,
-                expire: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24-hour expiration
-                data: JSON.stringify({ balance: newBalance }) // Store the initial balance
+                expire: new Date(Date.now() + 24 * 60 * 60 * 1000),  // 24-hour expiration
+                data: JSON.stringify({ balance: 0 })
             });
-            console.log('New session created with balance:', newBalance);
-
-            return res.status(200).json({
-                message: 'Credits added successfully.',
-                creditsAdded: creditsToAdd,
-                newBalance: newBalance
-            });
+            console.log('New session created:', sessionData);
         }
 
         // Parse the session data to get the current balance stored in session
@@ -86,6 +78,7 @@ exports.buyCredits = async (req, res) => {
         });
     }
 };
+
 
 exports.updateCredits = async (req, res) => {
     const { sessionId, newBalance } = req.body;

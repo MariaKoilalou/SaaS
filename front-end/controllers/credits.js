@@ -13,7 +13,6 @@ exports.layout = async (req, res) => {
 
         let balance = 0;
 
-        // Fetch the balance from the backend buy_credits_service
         try {
             const response = await axios.get(url, {
                 params: {
@@ -49,8 +48,6 @@ exports.layout = async (req, res) => {
     }
 };
 
-
-
 exports.buyCredits = async (req, res) => {
     const creditsToBuy = req.body.credits;
     const url = `http://buy_credits_service:4002/buy`;
@@ -62,20 +59,18 @@ exports.buyCredits = async (req, res) => {
     }
 
     try {
+        // Make a POST request to the buy_credits_service to purchase credits
         const response = await axios.post(url, {
             credits: creditsToBuy,
             sessionId: req.session.id,
             currentBalance: req.session.balance
         });
 
+        // Update session balance with the new balance from the response
         req.session.balance = response.data.newBalance;
 
-        return res.render('credits.ejs', {
-            pageTitle: "Your Credits",
-            addedCredits: response.data.creditsAdded,
-            newBalance: req.session.balance,
-            error: null
-        });
+        // Redirect to the homepage after successful credit purchase
+        return res.redirect('/credits/');
 
     } catch (error) {
         console.error('buyCredits: Error purchasing credits:', error.message);
@@ -83,7 +78,7 @@ exports.buyCredits = async (req, res) => {
             console.error('buyCredits: Error response data:', error.response.data);
         }
 
-        // Render the page with an error message
+        // Render the page with an error message if the purchase fails
         return res.render('credits.ejs', {
             pageTitle: "Your Credits",
             newBalance: req.session.balance || 0, // Use session balance or 0 if error

@@ -1,11 +1,16 @@
 const amqp = require('amqplib/callback_api');
 
+// Replace with the actual RabbitMQ URL
+const RABBITMQ_URL = 'amqp://myuser:mypassword@rabbitmq:5672';
+
 // Function to consume messages from RabbitMQ
 function consumeMessages(queue = 'execution_updates_queue', handleMessage) {
-    amqp.connect(`amqp://${process.env.RABBITMQ_HOST}:${process.env.RABBITMQ_PORT}`, (err, connection) => {
+    amqp.connect(RABBITMQ_URL, (err, connection) => {
         if (err) {
             console.error('Failed to connect to RabbitMQ:', err);
-            throw err;
+            // Retry connection in case of failure
+            console.log('Retrying connection in 5 seconds...');
+            return setTimeout(() => consumeMessages(queue, handleMessage), 5000);
         }
 
         connection.createChannel((err, channel) => {

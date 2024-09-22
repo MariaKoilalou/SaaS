@@ -11,7 +11,7 @@ exports.getProblem = async (req, res) => {
     const newBalance = req.body.newBalance;
     const problemDetails = req.body;
 
-    const browseServiceUrl = 'http://browse_problems_service:4003';
+    const browseServiceUrl = 'http://browse_problems_service:4003/problems';
 
     try {
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });

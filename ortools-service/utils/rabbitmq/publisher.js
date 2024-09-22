@@ -1,8 +1,10 @@
 const amqp = require('amqplib/callback_api');
 
+const RABBITMQ_URL = 'amqp://myuser:mypassword@rabbitmq:5672';
+
 // Function to send a message to RabbitMQ
 function sendMessageToQueue(message, queue = 'problem_updates_queue') {
-    amqp.connect(`amqp://${process.env.RABBITMQ_HOST}:${process.env.RABBITMQ_PORT}`, (err, connection) => {
+    amqp.connect(RABBITMQ_URL, (err, connection) => {
         if (err) {
             console.error('Failed to connect to RabbitMQ:', err);
             throw err;

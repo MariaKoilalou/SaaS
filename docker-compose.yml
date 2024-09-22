@@ -1,6 +1,6 @@
-version: '3'
 services:
   rabbitmq:
+    mem_limit: 2g
     image: rabbitmq:management
     container_name: rabbitmq
     ports:
@@ -11,6 +11,13 @@ services:
     environment:
       - RABBITMQ_DEFAULT_USER=myuser
       - RABBITMQ_DEFAULT_PASS=mypassword
+    healthcheck:
+      test: [ "CMD", "rabbitmqctl", "status" ]  # Command to check RabbitMQ status
+      interval: 30s  # How often to check the service's health
+      timeout: 10s   # The maximum amount of time to wait for the health check command to succeed
+      retries: 5     # How many times to retry before marking the service as unhealthy
+      start_period: 30s
+    restart: always
 
   front_end_db:
     image: postgres:latest
@@ -88,7 +95,10 @@ services:
     ports:
       - "4003:4003"
     depends_on:
-      - browse_problems_db
+      browse_problems_db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       - DB_HOST=browse_problems_db
       - DB_PORT=5432
@@ -157,7 +167,10 @@ services:
     ports:
       - "4004:4004"
     depends_on:
-      - manage_problems_db
+      manage_problems_db:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     environment:
       - DB_HOST=manage_problems_db
       - DB_PORT=5432
@@ -208,6 +221,9 @@ services:
       dockerfile: Dockerfile
     ports:
       - "4008:4008"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
     environment:
       - BASE_URL=ortools_service
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234

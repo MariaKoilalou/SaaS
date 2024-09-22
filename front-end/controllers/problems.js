@@ -5,6 +5,15 @@ var models = initModels(sequelize);
 const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
+exports.showManageProblem = (req, res) => {
+    const executionId = req.params.executionId;
+
+    res.render('manageProblem.ejs', {
+        executionId,
+        sessionBalance: req.session.balance || 0
+    });
+};
+
 exports.renderSubmitProblemForm = (req, res) => {
     console.log('Rendering form - session balance:', req.session.balance);
 
