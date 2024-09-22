@@ -123,16 +123,6 @@ exports.browseProblems = async (req, res) => {
     }
 };
 
-exports.showManageProblem = (req, res) => {
-    const executionId = req.params.executionId;
-
-    res.render('manageProblem.ejs', {
-        executionId,
-
-        sessionBalance: req.session.balance || 0
-    });
-};
-
 exports.deleteProblem = async (req, res) => {
     const problemId = req.params.problemId;
     const manageServiceUrl = `http://manage_problems_service:4004/delete/${problemId}`;

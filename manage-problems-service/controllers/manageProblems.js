@@ -2,7 +2,7 @@ const axios = require('axios');
 const sequelize = require('../utils/database');
 const initModels = require("../models/init-models");
 const models = initModels(sequelize);
-const io = require('../utils/socket'); // Assuming you have a socket setup
+const { sendMessageToQueue } = require('../utils/rabbitmq/publisher');  // RabbitMQ Publisher
 
 // Function to create a problem and start execution
 exports.getProblem = async (req, res) => {
@@ -11,7 +11,7 @@ exports.getProblem = async (req, res) => {
     const newBalance = req.body.newBalance;
     const problemDetails = req.body;
 
-    const browseServiceUrl = 'http://browse_problems_service:4003/problems';
+    const browseServiceUrl = 'http://browse_problems_service:4003';
 
     try {
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
@@ -37,6 +37,7 @@ exports.getProblem = async (req, res) => {
             result: null
         });
 
+        // Notify the browse service about the new problem
         await axios.post(browseServiceUrl, {
             problemId: newProblem.id,
             sessionId,
@@ -52,7 +53,19 @@ exports.getProblem = async (req, res) => {
             executionId: newExecution.id
         });
 
-        // Start execution and send real-time updates via WebSocket
+        // Publish an initial message to RabbitMQ for the browse service and frontend
+        const message = {
+            action: 'execution_started',
+            executionId: newExecution.id,
+            problemId: newProblem.id,
+            sessionId: sessionId,
+            status: 'pending',
+            problemType: problemType,
+            details: problemDetails
+        };
+        sendMessageToQueue(message); // Publish message to RabbitMQ
+
+        // Start execution and send updates
         await startExecutionAndSendUpdates(newProblem, newExecution, browseServiceUrl);
 
     } catch (error) {
@@ -61,13 +74,11 @@ exports.getProblem = async (req, res) => {
     }
 };
 
-// Helper function to start execution in OR-Tools Service and send updates through WebSocket
 async function startExecutionAndSendUpdates(problem, execution, browseServiceUrl) {
-    const io = require('../utils/socket').getIO(); // Get Socket.IO instance
     const ortoolsUrl = `http://ortools_service:4008/solver`;
 
     try {
-        // Start execution by sending problem details to OR-Tools Service
+        // Send problem details to OR-Tools service to start execution
         const ortoolsResponse = await axios.post(ortoolsUrl, {
             problemType: problem.problemType,
             problemDetails: problem.problemDetails,
@@ -81,14 +92,18 @@ async function startExecutionAndSendUpdates(problem, execution, browseServiceUrl
             throw new Error('Failed to start execution in OR-Tools.');
         }
 
-        // Emit WebSocket event to notify frontend about the execution start
-        io.emit('executionStarted', {
+        // Notify RabbitMQ about the execution start
+        const message = {
+            action: 'execution_started',
             executionId: execution.id,
-            message: `Execution started for problem ID: ${problem.id}`,
-            status: 'in-progress'
-        });
+            problemId: problem.id,
+            sessionId: problem.sessionId,
+            status: 'in-progress',
+            message: `Execution started for problem ID: ${problem.id}`
+        };
+        sendMessageToQueue(message);  // Publish the message
 
-        await pollExecutionStatusAndSendUpdates(execution, browseServiceUrl, io);
+        await pollExecutionStatusAndSendUpdates(execution, browseServiceUrl);
 
     } catch (execError) {
         console.error('Error starting execution in OR-Tools:', execError.message);
@@ -99,16 +114,19 @@ async function startExecutionAndSendUpdates(problem, execution, browseServiceUrl
             result: execError.message
         });
 
-        io.emit('executionFailed', {
+        // Notify RabbitMQ about execution failure
+        const failureMessage = {
+            action: 'execution_failed',
             executionId: execution.id,
+            problemId: problem.id,
             message: `Execution failed for problem ID: ${problem.id}`,
             error: execError.message
-        });
+        };
+        sendMessageToQueue(failureMessage);
     }
 }
 
-// Poll OR-Tools service for execution status updates and send WebSocket updates
-async function pollExecutionStatusAndSendUpdates(execution, browseServiceUrl, io) {
+async function pollExecutionStatusAndSendUpdates(execution, browseServiceUrl) {
     const ortoolsStatusUrl = `http://ortools_service:4008/status/${execution.id}`;
     let pollInterval = 5000; // Poll every 5 seconds
 
@@ -117,7 +135,7 @@ async function pollExecutionStatusAndSendUpdates(execution, browseServiceUrl, io
             const response = await axios.get(ortoolsStatusUrl);
             const { status, result, progress, metaData } = response.data;
 
-            // Update execution status, result, progress, and meta data
+            // Update the execution status, result, and progress in the database
             await execution.update({
                 status,
                 result: result || null,
@@ -125,6 +143,7 @@ async function pollExecutionStatusAndSendUpdates(execution, browseServiceUrl, io
                 metaData: metaData || execution.metaData
             });
 
+            // Notify the browse service about the execution status update
             await axios.patch(`${browseServiceUrl}/${execution.problemId}`, {
                 status,
                 result,
@@ -132,14 +151,17 @@ async function pollExecutionStatusAndSendUpdates(execution, browseServiceUrl, io
                 metaData
             });
 
-            // Emit WebSocket event for real-time status update
-            io.emit('executionStatusUpdate', {
+            // Send a message to RabbitMQ with the status update
+            const updateMessage = {
+                action: 'execution_status_updated',
                 executionId: execution.id,
+                problemId: execution.problemId,
                 status,
                 progress,
                 metaData,
                 message: `Execution status updated for problem ID: ${execution.problemId}`
-            });
+            };
+            sendMessageToQueue(updateMessage);  // Publish the update to RabbitMQ
 
             // Stop polling if execution is completed or failed
             if (status === 'completed' || status === 'failed') {
@@ -152,10 +174,10 @@ async function pollExecutionStatusAndSendUpdates(execution, browseServiceUrl, io
         }
     }, pollInterval);
 }
-
+// Function to update the execution metadata and input data
 exports.updateExecution = async (req, res) => {
     const { executionId } = req.params;
-    const { newMeta, newInput } = req.body;  // Expect new meta and input data in the request
+    const { newMeta, newInput } = req.body;
 
     try {
         const execution = await models.Execution.findByPk(executionId);
@@ -164,30 +186,31 @@ exports.updateExecution = async (req, res) => {
             return res.status(404).json({ message: 'Execution not found.' });
         }
 
-        // Update metadata (like numVehicles, depot, maxDistance) if provided
+        // Update metadata and input data if provided
         if (newMeta) {
             execution.metaData = {
                 ...execution.metaData,
-                ...newMeta  // Merge new meta with existing
+                ...newMeta
             };
         }
-
-        // Update input data (like locationFile) if provided
         if (newInput) {
             execution.inputData = {
                 ...execution.inputData,
-                ...newInput  // Merge new input with existing
+                ...newInput
             };
         }
 
         await execution.save();
 
-        io.getIO().emit('executionUpdated', {
-            message: `Execution ${execution.id} has been updated.`,
+        // Publish an update message to RabbitMQ
+        const updateMessage = {
+            action: 'execution_updated',
             executionId: execution.id,
             metaData: execution.metaData,
-            inputData: execution.inputData
-        });
+            inputData: execution.inputData,
+            message: `Execution ${execution.id} has been updated.`
+        };
+        sendMessageToQueue(updateMessage);  // Notify RabbitMQ
 
         return res.status(200).json({
             message: 'Execution updated successfully',
@@ -202,8 +225,7 @@ exports.updateExecution = async (req, res) => {
     }
 };
 
-
-// Fetch the current status of an execution
+// Function to fetch the current status of an execution
 exports.getExecutionStatus = async (req, res) => {
     const { executionId } = req.params;
 
@@ -225,7 +247,7 @@ exports.getExecutionStatus = async (req, res) => {
     }
 };
 
-// Optionally delete a problem and cancel the related execution
+// Function to delete a problem and cancel the related execution
 exports.deleteProblem = async (req, res) => {
     const { problemId } = req.params;
 
@@ -239,17 +261,19 @@ exports.deleteProblem = async (req, res) => {
         const execution = await models.Execution.findOne({ where: { problemId } });
 
         if (execution && execution.status === 'pending') {
-            io.getIO().emit('executionCancelled', {
-                message: `Execution for problem ID ${problemId} has been cancelled.`,
-                executionId: execution.id
-            });
-
+            // Update the execution status to cancelled
             await execution.update({
                 status: 'cancelled',
                 result: 'Execution was cancelled by the user.'
             });
 
-            console.log(`Execution for problem ${problemId} cancelled.`);
+            // Publish a cancellation message to RabbitMQ
+            const cancellationMessage = {
+                action: 'execution_cancelled',
+                executionId: execution.id,
+                message: `Execution for problem ID ${problemId} has been cancelled.`
+            };
+            sendMessageToQueue(cancellationMessage);  // Notify RabbitMQ
         }
 
         await problem.destroy();

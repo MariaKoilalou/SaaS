@@ -1,29 +1,33 @@
 const http = require('http'); // Import the HTTP module
 const app = require('./app'); // Import the Express app
-const socket = require('./utils/socket'); // Import socket utility
+const { consumeMessages } = require('./utils/rabbitmq/consumer'); // Import RabbitMQ consumer logic
+const { sendMessageToQueue } = require('./utils/rabbitmq/publisher'); // Import RabbitMQ publisher logic
 
-// Set the port using the PORT environment variable if available, or use 4008 as a fallback
 const port = process.env.PORT || 4008;
 
 // Create an HTTP server from the Express app
 const server = http.createServer(app);
 
-// Initialize Socket.IO using the socket utility and attach it to the server
-const io = socket.init(server);
+// Database and schema setup (if needed)
 
-// Socket.IO connection handling
-io.on('connection', (socket) => {
-    console.log('A client connected:', socket.id);
+// Start consuming RabbitMQ messages
+consumeMessages('vrp_solver_queue', handleSolverMessages);
 
-    // Handle disconnection
-    socket.on('disconnect', () => {
-        console.log('Client disconnected:', socket.id);
-    });
-
-    // Add more event handlers if needed for OR-Tools related updates
-});
-
-// Start the HTTP server and Socket.IO
+// Start the HTTP server
 server.listen(port, () => {
     console.log(`OR-Tools Service running on port ${port}!`);
 });
+
+// Function to handle incoming messages (trigger the solver based on the message)
+function handleSolverMessages(message) {
+    console.log('Received message:', message);
+
+    if (message.action === 'start_vrp_solver') {
+        // Trigger the VRP solver here with the message's details
+        console.log('Starting VRP solver for problem:', message.problemId);
+        // Call the controller function to start solving the problem
+        // Alternatively, trigger a job to process the problem asynchronously
+    } else {
+        console.log('Unknown message action:', message.action);
+    }
+}

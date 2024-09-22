@@ -12,6 +12,8 @@ const app = express();
 const layout = require('./routes/layout');
 const problems = require('./routes/problems');
 const credits = require('./routes/credits');
+const execution = require('./routes/execution');
+
 
 // Initialize models
 var initModels = require("./models/init-models");
@@ -55,6 +57,8 @@ store.sync();
 app.use('/', layout);        // General layout routes
 app.use('/problems', problems);  // Problem-related routes
 app.use('/credits', credits);  // Credit-related routes
+app.use('/execution', execution);
+
 
 // Home route
 app.get('/', (req, res) => {

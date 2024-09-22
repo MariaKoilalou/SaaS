@@ -122,77 +122,56 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Socket.IO Script -->
-<script src="../utils/socket.js"></script>
+<!-- Polling-based Status Updates -->
 <script>
-    // Connect to the Socket.IO server
-    const socket = io();
-
     const executionId = document.getElementById('execution-id').textContent;
     const statusMessage = document.getElementById('status-message');
     const progressBar = document.getElementById('progress-bar');
     const updatesList = document.getElementById('updates-list');
 
-    // Listen for updates from the Manage Problem Service
-    socket.on('executionStatusUpdate', (data) => {
-        if (data.executionId === executionId) {
-            // Update the status message
-            document.getElementById('execution-status').textContent = data.status;
+    // Poll the server every 5 seconds to get execution updates
+    const pollInterval = 5000;
 
-            if (data.status === 'in-progress') {
-                statusMessage.textContent = 'Execution is in progress...';
-                progressBar.style.width = `${data.progress || 0}%`;
-                progressBar.textContent = `${data.progress || 0}%`;
-            } else if (data.status === 'completed') {
-                statusMessage.textContent = 'Execution completed successfully!';
-                progressBar.style.width = '100%';
-                progressBar.textContent = '100%';
-                progressBar.classList.remove('bg-success');
-                progressBar.classList.add('bg-info');
-            } else if (data.status === 'failed') {
-                statusMessage.textContent = 'Execution failed.';
-                progressBar.style.width = '100%';
-                progressBar.textContent = 'Failed';
-                progressBar.classList.remove('bg-success');
-                progressBar.classList.add('bg-danger');
-            }
+    function fetchExecutionStatus() {
+        fetch(`/executions/${executionId}/status`)
+            .then(response => response.json())
+            .then(data => {
+                updateExecutionStatus(data);
+            })
+            .catch(error => {
+                console.error('Error fetching execution status:', error);
+            });
+    }
 
-            // Add new updates to the list
-            const updateItem = document.createElement('li');
-            updateItem.textContent = `Update: ${data.message || 'No additional details.'} (Progress: ${data.progress || 0}%)`;
-            updatesList.appendChild(updateItem);
-        }
-    });
+    function updateExecutionStatus(data) {
+        document.getElementById('execution-status').textContent = data.status;
 
-    // Handle failure
-    socket.on('executionFailed', (data) => {
-        if (data.executionId === executionId) {
-            statusMessage.textContent = 'Execution failed with an error.';
-            progressBar.style.width = '100%';
-            progressBar.textContent = 'Failed';
-            progressBar.classList.remove('bg-success');
-            progressBar.classList.add('bg-danger');
-
-            const updateItem = document.createElement('li');
-            updateItem.textContent = `Error: ${data.error}`;
-            updatesList.appendChild(updateItem);
-        }
-    });
-
-    // Handle completion
-    socket.on('executionCompleted', (data) => {
-        if (data.executionId === executionId) {
+        if (data.status === 'in-progress') {
+            statusMessage.textContent = 'Execution is in progress...';
+            progressBar.style.width = `${data.progress || 0}%`;
+            progressBar.textContent = `${data.progress || 0}%`;
+        } else if (data.status === 'completed') {
             statusMessage.textContent = 'Execution completed successfully!';
             progressBar.style.width = '100%';
             progressBar.textContent = '100%';
             progressBar.classList.remove('bg-success');
             progressBar.classList.add('bg-info');
-
-            const updateItem = document.createElement('li');
-            updateItem.textContent = `Result: ${data.result}`;
-            updatesList.appendChild(updateItem);
+        } else if (data.status === 'failed') {
+            statusMessage.textContent = 'Execution failed.';
+            progressBar.style.width = '100%';
+            progressBar.textContent = 'Failed';
+            progressBar.classList.remove('bg-success');
+            progressBar.classList.add('bg-danger');
         }
-    });
+
+        const updateItem = document.createElement('li');
+        updateItem.textContent = `Update: ${data.message || 'No additional details.'} (Progress: ${data.progress || 0}%)`;
+        updatesList.appendChild(updateItem);
+    }
+
+    // Start polling
+    setInterval(fetchExecutionStatus, pollInterval);
 </script>
+
 </body>
 </html>

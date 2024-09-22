@@ -1,8 +1,8 @@
 const app = require('./app'); // Import the Express app
 
 const sequelize = require("./utils/database");
-var initModels = require("./models/init-models");
-var models = initModels(sequelize);
+const initModels = require("./models/init-models");
+const models = initModels(sequelize);
 
 const port = process.env.PORT || 4002;
 

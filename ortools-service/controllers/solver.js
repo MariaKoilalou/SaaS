@@ -1,12 +1,11 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const socket = require('../utils/socket'); // Import socket utility to access Socket.IO
+const { sendMessageToQueue } = require('../utils/rabbitmq/publisher'); // Import RabbitMQ publisher
 
 // Solver function to process the problem
 exports.solver = async (req, res) => {
     try {
-        const io = socket.getIO();
         const { problemType, problemDetails, sessionId } = req.body;
 
         // Validate incoming data
@@ -40,8 +39,9 @@ exports.solver = async (req, res) => {
         console.log('Meta Data:', meta);
         console.log('Input Data:', input);
 
-        // Emit an event that the solver has started
-        io.emit('solverStarted', {
+        // Publish an event that the solver has started to RabbitMQ
+        sendMessageToQueue({
+            action: 'solver_started',
             sessionId,
             problemType,
             meta,
@@ -52,10 +52,6 @@ exports.solver = async (req, res) => {
         // Construct the command to run the Python script using spawn
         const scriptPath = path.resolve(__dirname, 'vrpSolver.py');
         const solverProcess = spawn('python3', [scriptPath, input.locationFilePath, meta.numVehicles, meta.depot, meta.maxDistance]);
-
-        // Set response headers for streaming
-        res.setHeader('Content-Type', 'application/json');
-        res.setHeader('Transfer-Encoding', 'chunked');
 
         // Send initial progress update to the client
         res.write(JSON.stringify({ status: 'started', progress: 0 }) + '\n');
@@ -76,8 +72,9 @@ exports.solver = async (req, res) => {
                     partialResult: progressUpdate.partialResult || null
                 }) + '\n');
 
-                // Emit a Socket.IO event with the progress update
-                io.emit('solverProgress', {
+                // Publish progress update to RabbitMQ
+                sendMessageToQueue({
+                    action: 'solver_progress',
                     sessionId,
                     problemType,
                     progress,
@@ -92,11 +89,11 @@ exports.solver = async (req, res) => {
                     rawOutput: output
                 }) + '\n');
 
-                // Emit raw progress updates as well
-                io.emit('solverProgress', {
+                // Publish raw progress updates to RabbitMQ
+                sendMessageToQueue({
+                    action: 'solver_progress_raw',
                     sessionId,
                     problemType,
-                    progress: null,
                     rawOutput: output,
                     message: 'Solver raw output received'
                 });
@@ -109,8 +106,9 @@ exports.solver = async (req, res) => {
                 res.write(JSON.stringify({ status: 'completed', progress: 100 }) + '\n');
                 res.end();
 
-                // Emit a completion event via Socket.IO
-                io.emit('solverCompleted', {
+                // Publish completion event via RabbitMQ
+                sendMessageToQueue({
+                    action: 'solver_completed',
                     sessionId,
                     problemType,
                     message: 'Solver execution completed successfully',
@@ -124,8 +122,9 @@ exports.solver = async (req, res) => {
                 }) + '\n');
                 res.end();
 
-                // Emit a failure event via Socket.IO
-                io.emit('solverFailed', {
+                // Publish failure event to RabbitMQ
+                sendMessageToQueue({
+                    action: 'solver_failed',
                     sessionId,
                     problemType,
                     message: 'Solver process failed',
@@ -140,8 +139,9 @@ exports.solver = async (req, res) => {
             res.write(JSON.stringify({ status: 'error', error: data.toString() }) + '\n');
             res.end();
 
-            // Emit an error event via Socket.IO
-            io.emit('solverError', {
+            // Publish error event via RabbitMQ
+            sendMessageToQueue({
+                action: 'solver_error',
                 sessionId,
                 problemType,
                 message: 'Solver encountered an error',

@@ -25,13 +25,6 @@
         th {
             background-color: #f5f5f5;
         }
-        .problem-actions {
-            display: flex;
-            justify-content: space-around;
-        }
-        .problem-actions button {
-            margin: 0 5px;
-        }
         .status-ready {
             color: green;
             font-weight: bold;
@@ -42,6 +35,10 @@
         }
         .status-executed {
             color: blue;
+            font-weight: bold;
+        }
+        .status-unknown {
+            color: gray;
             font-weight: bold;
         }
         .pagination-container {
@@ -63,13 +60,9 @@
 <div id="main-div" class="container">
     <h2>Browse Problems</h2>
 
-    <% if (problems.length === 0) { %>
-        <div class="alert alert-info">
-            No problems found for this session.
-        </div>
-    <% } else { %>
+    <div id="problem-table-container">
         <!-- Problem List Table -->
-        <table>
+        <table id="problem-table">
             <thead>
             <tr>
                 <th>Created On</th>
@@ -77,26 +70,14 @@
                 <th>Actions</th>
             </tr>
             </thead>
-            <tbody>
+            <tbody id="problem-list">
             <% problems.forEach(problem => { %>
-                <tr>
+                <tr data-problem-id="<%= problem.id %>">
                     <td><%= problem.dateCreated %></td>
-                    <td>
-                        <% if (problem.problemDetails.status === 'completed') { %>
-                            <span class="status-completed">Completed</span>
-                        <% } else if (problem.problemDetails.status === 'pending') { %>
-                            <span class="status-pending">Pending</span>
-                        <% } else if (problem.problemDetails.status === 'cancelled') { %>
-                            <span class="status-not-ready">Cancelled</span>
-                        <% } else if (problem.problemDetails.status === 'executed') { %>
-                            <span class="status-executed">Executed</span>
-                        <% } else { %>
-                            <span class="status-unknown">Unknown</span>
-                        <% } %>
-                    </td>
+                    <td class="status-column"><%= problem.status %></td>
                     <td class="problem-actions">
                         <a href="/problems/manage/<%= problem.id %>" class="btn btn-sm btn-primary">View/Edit</a>
-                        <% if (problem.problemDetails.status === 'executed') { %>
+                        <% if (problem.status === 'executed') { %>
                             <a href="/problems/results/<%= problem.id %>" class="btn btn-sm btn-info">View Results</a>
                         <% } else { %>
                             <button class="btn btn-sm btn-secondary" disabled>View Results</button>
@@ -107,7 +88,7 @@
             <% }); %>
             </tbody>
         </table>
-    <% } %>
+    </div>
 
     <!-- Pagination -->
     <% if (pagination && pagination.totalPages > 1) { %>
@@ -137,5 +118,42 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Poll for Problem Status Updates -->
+<script>
+    const pollInterval = 5000; // Poll every 5 seconds
+
+    function fetchProblemStatusUpdates() {
+        fetch('/problems/status-updates')
+            .then(response => response.json())
+            .then(data => {
+                updateProblemStatus(data.problems);
+            })
+            .catch(error => {
+                console.error('Error fetching problem status updates:', error);
+            });
+    }
+
+    function updateProblemStatus(problems) {
+        problems.forEach(problem => {
+            const problemRow = document.querySelector(`tr[data-problem-id="${problem.id}"]`);
+            if (problemRow) {
+                const statusColumn = problemRow.querySelector('.status-column');
+                statusColumn.textContent = problem.status;
+
+                // Optionally update action buttons based on new status
+                const resultButton = problemRow.querySelector('.btn-info');
+                if (problem.status === 'executed') {
+                    resultButton.disabled = false;
+                } else {
+                    resultButton.disabled = true;
+                }
+            }
+        });
+    }
+
+    // Start polling
+    setInterval(fetchProblemStatusUpdates, pollInterval);
+</script>
 </body>
 </html>

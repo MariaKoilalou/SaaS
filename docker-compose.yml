@@ -1,4 +1,17 @@
+version: '3'
 services:
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"    # Main port for messaging
+      - "15672:15672"  # Management UI port
+    networks:
+      - my_network
+    environment:
+      - RABBITMQ_DEFAULT_USER=myuser
+      - RABBITMQ_DEFAULT_PASS=mypassword
+
   front_end_db:
     image: postgres:latest
     environment:
@@ -88,6 +101,8 @@ services:
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - JWT_SECRET=supersecretjwtkey12345
+      - RABBITMQ_HOST=rabbitmq   # Add RabbitMQ environment variable
+      - RABBITMQ_PORT=5672       # Add RabbitMQ environment variable
     networks:
       - my_network
     restart: always
@@ -112,6 +127,8 @@ services:
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - JWT_SECRET=supersecretjwtkey12345
+      - RABBITMQ_HOST=rabbitmq   # Add RabbitMQ environment variable
+      - RABBITMQ_PORT=5672       # Add RabbitMQ environment variable
     networks:
       - my_network
     restart: always
@@ -127,6 +144,8 @@ services:
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - JWT_SECRET=supersecretjwtkey12345
+      - RABBITMQ_HOST=rabbitmq   # Add RabbitMQ environment variable
+      - RABBITMQ_PORT=5672       # Add RabbitMQ environment variable
     networks:
       - my_network
     restart: always
@@ -151,6 +170,8 @@ services:
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - JWT_SECRET=supersecretjwtkey12345
+      - RABBITMQ_HOST=rabbitmq   # Add RabbitMQ environment variable
+      - RABBITMQ_PORT=5672       # Add RabbitMQ environment variable
     networks:
       - my_network
     restart: always
@@ -175,6 +196,8 @@ services:
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - JWT_SECRET=supersecretjwtkey12345
+      - RABBITMQ_HOST=rabbitmq   # Add RabbitMQ environment variable
+      - RABBITMQ_PORT=5672       # Add RabbitMQ environment variable
     networks:
       - my_network
     restart: always
@@ -186,10 +209,12 @@ services:
     ports:
       - "4008:4008"
     environment:
-      - BASE_URL=submit_problem_service
+      - BASE_URL=ortools_service
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - JWT_SECRET=supersecretjwtkey12345
+      - RABBITMQ_HOST=rabbitmq   # Add RabbitMQ environment variable
+      - RABBITMQ_PORT=5672       # Add RabbitMQ environment variable
     networks:
       - my_network
     restart: always
