@@ -81,23 +81,6 @@ exports.handleSubmitProblem = async (req, res) => {
             await req.session.save();  // Save updated balance in session
             console.log(`${req.session.balance}`);
 
-            // Notify the credits microcontroller to update the balance
-            try {
-                const creditsResponse = await axios.post(updateCreditsUrl, {
-                    sessionId: sessionId,
-                    currentBalance: req.session.balance,
-                    credits: 0,
-                });
-
-                if (creditsResponse.status === 200) {
-                    console.log('Credits updated successfully in credits microcontroller');
-                } else {
-                    console.error('Failed to update credits in credits microcontroller:', creditsResponse.data.message);
-                }
-            } catch (error) {
-                console.error('Error updating credits in credits microcontroller:', error.message);
-            }
-
             // Redirect to the manageProblem.ejs page with the executionId
             return res.redirect(`manage/${executionId}`);
         }

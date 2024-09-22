@@ -8,7 +8,7 @@ const SequelizeStore = require('connect-session-sequelize')(session.Store);
 exports.buy = async (req, res) => {
     const creditsToAdd = req.body.credits;
     const sessionId = req.body.sessionId;
-    const currentBalance = Number(req.body.currentBalance);  // Ensure the current balance is parsed correctly
+    const currentBalance = Number(req.body.currentBalance);
 
     // Ensure current balance is a valid number
     const currentBalanceNum = isNaN(currentBalance) ? 0 : currentBalance;
@@ -69,3 +69,46 @@ exports.buy = async (req, res) => {
     }
 };
 
+exports.update = async (req, res) => {
+    const { sessionId, newBalance } = req.body;
+
+    // Validate the request payload
+    if (!sessionId || newBalance === undefined) {
+        return res.status(400).json({
+            message: 'SessionId and newBalance are required'
+        });
+    }
+
+    try {
+        // Find the session data by sessionId
+        let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
+
+        if (!sessionData) {
+            return res.status(404).json({
+                message: 'Session not found'
+            });
+        }
+
+        let sessionParsedData = JSON.parse(sessionData.data || '{}');
+        sessionParsedData.balance = newBalance;  // Update balance
+
+        // Save the updated balance back to session data
+        sessionData.data = JSON.stringify(sessionParsedData);
+        await sessionData.save();  // Save updated session data to the database
+
+        console.log(`Balance for session ${sessionId} updated to ${newBalance}`);
+
+        return res.status(200).json({
+            message: 'Balance updated successfully',
+            sessionId,
+            newBalance
+        });
+
+    } catch (error) {
+        console.error('Error updating balance:', error.message);
+        return res.status(500).json({
+            message: 'Internal server error. Failed to update balance.',
+            error: error.message
+        });
+    }
+};

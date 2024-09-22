@@ -63,12 +63,29 @@ exports.submit = async (req, res) => {
             const executionId = manageResponse.data.executionId;
             console.log('Received executionId from manage_problems_service:', executionId);
 
-            return res.status(200).json({
-                message: 'Problem submitted successfully',
-                newBalance,
-                executionId
-            });
+            // Update the balance in credits service
+            const creditsServiceUrl = 'http://credits_service:4002/credits/update';
+            try {
+                await axios.post(creditsServiceUrl, {
+                    sessionId,
+                    newBalance
+                });
+                console.log('New balance updated in credits_service:', newBalance);
 
+                return res.status(200).json({
+                    message: 'Problem submitted successfully',
+                    newBalance,
+                    executionId
+                });
+
+            } catch (creditsError) {
+                console.error('Error updating balance in credits_service:', creditsError.message);
+                return res.status(500).json({
+                    message: 'Problem submitted, but failed to update balance in credits_service.',
+                    executionId,
+                    error: creditsError.message
+                });
+            }
 
         } catch (manageError) {
             console.error('Error sending problem to manage_problems_service:', manageError.message);

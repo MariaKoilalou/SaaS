@@ -16,7 +16,6 @@ exports.show = async (req, res) => {
     console.log('show: Received request for sessionId:', sessionId);
 
     try {
-        // Check if the session exists in the Session table
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
 
         if (!sessionData) {

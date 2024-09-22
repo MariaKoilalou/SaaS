@@ -2,39 +2,54 @@ const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
+// Solver function to process the problem
 exports.solver = async (req, res) => {
     try {
         const { problemType, problemDetails, sessionId } = req.body;
 
-        // Validate the incoming data
+        // Validate incoming data
         if (!problemType || !problemDetails || problemType !== 'vrp') {
             return res.status(400).json({ message: 'Invalid or missing problem type or problem details.' });
         }
 
         console.log('Received VRP problem for OR-Tools:', problemDetails);
 
-        // Extract parameters from problemDetails
+        // Extract metadata and input data from problemDetails
         const { locationFile, numVehicles, depot, maxDistance } = problemDetails;
 
+        // Ensure required metadata and input data are present
         if (!locationFile || !numVehicles || depot === undefined || !maxDistance) {
             return res.status(400).json({ message: 'Missing required VRP parameters.' });
         }
 
-        // Define the correct path to the Python script located outside the current directory
-        const scriptPath = path.resolve(__dirname, 'vrpSolver.py');  // Python VRP solver script
-        const locationFilePath = path.resolve(__dirname, locationFile);  // Path to the location file
+        // Metadata: numVehicles, depot, maxDistance
+        const meta = {
+            numVehicles,
+            depot,
+            maxDistance
+        };
 
-        if (!fs.existsSync(locationFilePath)) {
+        // Input Data: locationFile
+        const input = {
+            locationFilePath: path.resolve(__dirname, locationFile)
+        };
+
+        if (!fs.existsSync(input.locationFilePath)) {
             return res.status(400).json({ message: 'Location file not found.' });
         }
 
+        // Log metadata and input data for debugging
+        console.log('Meta Data:', meta);
+        console.log('Input Data:', input);
+
         // Construct the command to run the Python script using spawn
-        const command = `python3 ${scriptPath} ${locationFilePath} ${numVehicles} ${depot} ${maxDistance}`;
+        const scriptPath = path.resolve(__dirname, 'vrpSolver.py');
+        const command = `python3 ${scriptPath} ${input.locationFilePath} ${meta.numVehicles} ${meta.depot} ${meta.maxDistance}`;
 
         console.log('Executing command:', command);
 
         // Use spawn to execute the Python script and stream the output
-        const solverProcess = spawn('python3', [scriptPath, locationFilePath, numVehicles, depot, maxDistance]);
+        const solverProcess = spawn('python3', [scriptPath, input.locationFilePath, meta.numVehicles, meta.depot, meta.maxDistance]);
 
         // Set response headers for streaming
         res.setHeader('Content-Type', 'application/json');
@@ -95,6 +110,3 @@ exports.solver = async (req, res) => {
         });
     }
 };
-
-
-
