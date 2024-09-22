@@ -17,7 +17,7 @@ exports.renderSubmitProblemForm = (req, res) => {
 
 exports.handleSubmitProblem = async (req, res) => {
     const submitProblemUrl = `http://submit_problem_service:4001/submit`;
-    const updateCreditsUrl = `http://credits_service:4002/credits/buy`;  // The credits microcontroller URL
+    const updateCreditsUrl = `http://buy_credits_service:4002/update`;  // The credits microcontroller URL
 
     console.log('Received a POST request to /submit');
     console.log('Request body:', req.body);

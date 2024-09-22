@@ -4,7 +4,6 @@ const models = initModels(sequelize);
 
 exports.getBalance = async (req, res) => {
     const sessionId = req.query.sessionId;  // Get sessionId from query params
-    console.error(`fetching balance for ${sessionId}`);
 
     try {
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
