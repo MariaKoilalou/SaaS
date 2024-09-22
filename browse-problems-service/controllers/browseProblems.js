@@ -87,10 +87,8 @@ exports.show = async (req, res) => {
 };
 
 exports.updateProblem = async (req, res) => {
-    const problemId = req.params.problemId;
-    const { status, result } = req.body;
-
-    console.log(`updateProblem: Received status update for problem ${problemId} with status ${status}`);
+    const { status, progress, result } = req.body;
+    const problemId = req.params.problemId; // Extract problemId from URL parameters
 
     try {
         // Find the problem in the database
@@ -100,10 +98,11 @@ exports.updateProblem = async (req, res) => {
             return res.status(404).json({ message: 'Problem not found.' });
         }
 
-        // Update the problem's status and result
+        // Update the problem's status, progress, and result in the database
         await problem.update({
             status: status,
-            result: result
+            progress: progress || null,
+            result: result || null
         });
 
         console.log(`Problem ${problemId} updated successfully with status ${status}`);
@@ -114,6 +113,7 @@ exports.updateProblem = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error. Unable to update the problem.' });
     }
 };
+
 
 exports.getProblem = async (req, res) => {
     const sessionId = req.body.sessionId;
@@ -181,6 +181,26 @@ exports.deleteProblem = async (req, res) => {
     } catch (error) {
         console.error(`Error deleting problem ${problemId} from Browse Problem Service:`, error.message);
         return res.status(500).json({ message: 'Internal server error. Could not delete the problem.' });
+    }
+};
+
+exports.getStatus = async (req, res) => {
+    const sessionId = req.session.id; // Use the sessionId to filter problems
+
+    try {
+        // Fetch all problems for the session
+        const problems = await models.Problem.findAll({
+            where: { sessionId: sessionId },
+            attributes: ['id', 'status'],  // Only return the id and status for updates
+            order: [['dateCreated', 'ASC']]
+        });
+
+        // Send the problems as a JSON response
+        return res.status(200).json({ problems });
+
+    } catch (error) {
+        console.error('Error fetching problem status updates:', error);
+        return res.status(500).json({ message: 'Internal server error. Unable to fetch problem updates.' });
     }
 };
 

@@ -123,17 +123,21 @@
 <script>
     const pollInterval = 5000; // Poll every 5 seconds
 
+    // Fetch problem status updates from the /problems/status endpoint
     function fetchProblemStatusUpdates() {
-        fetch('/problems/status-updates')
+        fetch('/problems/status')
             .then(response => response.json())
             .then(data => {
-                updateProblemStatus(data.problems);
+                if (data.problems) {
+                    updateProblemStatus(data.problems);
+                }
             })
             .catch(error => {
                 console.error('Error fetching problem status updates:', error);
             });
     }
 
+    // Update the problem statuses in the table
     function updateProblemStatus(problems) {
         problems.forEach(problem => {
             const problemRow = document.querySelector(`tr[data-problem-id="${problem.id}"]`);
@@ -144,16 +148,17 @@
                 // Optionally update action buttons based on new status
                 const resultButton = problemRow.querySelector('.btn-info');
                 if (problem.status === 'executed') {
-                    resultButton.disabled = false;
+                    resultButton.disabled = false; // Enable the "View Results" button
                 } else {
-                    resultButton.disabled = true;
+                    resultButton.disabled = true;  // Disable the "View Results" button
                 }
             }
         });
     }
 
-    // Start polling
+    // Start polling for problem status updates
     setInterval(fetchProblemStatusUpdates, pollInterval);
 </script>
+
 </body>
 </html>

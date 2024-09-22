@@ -9,9 +9,9 @@ router.post('/submit', problemsController.handleSubmitProblem);
 
 router.get('/show', problemsController.browseProblems);
 
-router.get('/manage/:problemId', problemsController.showManageProblem);
+router.get('/status', problemsController.getProblemStatus);
 
-// router.get('/results/:problemId', problemsController.viewProblemResults);
+router.get('/manage/:problemId', problemsController.showManageProblem);
 
 router.get('/delete/:problemId', problemsController.deleteProblem);
 

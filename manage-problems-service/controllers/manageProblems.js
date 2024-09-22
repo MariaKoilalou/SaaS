@@ -2,18 +2,19 @@ const axios = require('axios');
 const sequelize = require('../utils/database');
 const initModels = require("../models/init-models");
 const models = initModels(sequelize);
-const { sendMessageToQueue } = require('../utils/rabbitmq/publisher');  // RabbitMQ Publisher
+const { sendMessageToQueue } = require('../utils/rabbitmq/publisher');
+const { consumeMessagesFromQueue } = require('../utils/rabbitmq/consumer'); // RabbitMQ consumer
 
-// Function to create a problem and start execution
+
 exports.getProblem = async (req, res) => {
     const sessionId = req.body.sessionId;
     const problemType = req.body.problemType;
     const newBalance = req.body.newBalance;
-    const problemDetails = req.body;
-
-    const browseServiceUrl = 'http://browse_problems_service:4003/problems';
+    const problemDetails = req.body; // Make sure to validate problemDetails properly
+    const ortoolsUrl = 'http://ortools_service:4008/solver';
 
     try {
+        // Check if session exists or create a new one
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
 
         if (!sessionData) {
@@ -25,155 +26,49 @@ exports.getProblem = async (req, res) => {
             });
         }
 
+        // Send problem details to OR-Tools service
+        const ortoolsResponse = await axios.post(ortoolsUrl, {
+            sessionId,
+            problemType,
+            problemDetails
+        });
+
+        const { metaData, inputData } = ortoolsResponse.data; // OR-Tools response with meta and input data
+
+        // Create a new problem in the database
         const newProblem = await models.Problem.create({
             problemType: problemType,
             sessionId: sessionId,
             problemDetails: problemDetails
         });
 
+        // Create an execution in the database with pending status
         const newExecution = await models.Execution.create({
             problemId: newProblem.id,
             status: 'pending',
-            result: null
-        });
-
-        // Notify the browse service about the new problem
-        await axios.post(browseServiceUrl, {
-            problemId: newProblem.id,
-            sessionId,
-            status: 'pending',
-            problemType,
-            details: problemDetails
+            result: null,
+            metaData: JSON.stringify(metaData),
+            inputData: JSON.stringify(inputData)
         });
 
         console.log('Execution created with ID:', newExecution.id);
 
+        // Respond to client with the pending execution status
         res.status(200).json({
-            message: 'Problem created and execution started.',
+            message: 'Problem created and execution started with pending status.',
             executionId: newExecution.id
         });
 
-        // Publish an initial message to RabbitMQ for the browse service and frontend
-        const message = {
-            action: 'execution_started',
-            executionId: newExecution.id,
-            problemId: newProblem.id,
-            sessionId: sessionId,
-            status: 'pending',
-            problemType: problemType,
-            details: problemDetails
-        };
-        sendMessageToQueue(message); // Publish message to RabbitMQ
-
-        // Start execution and send updates
-        await startExecutionAndSendUpdates(newProblem, newExecution, browseServiceUrl);
+        // Start listening for RabbitMQ updates on this execution
+        consumeMessagesFromQueue(newProblem.id, newExecution.id); // Here we use the refactored consumer
 
     } catch (error) {
         console.error('Error in Manage Problem Service:', error.message);
-        return res.status(500).json({ message: 'Internal server error. Unable to save the problem.' });
+        return res.status(500).json({ message: 'Internal server error. Unable to start the problem execution.' });
     }
 };
 
-async function startExecutionAndSendUpdates(problem, execution, browseServiceUrl) {
-    const ortoolsUrl = `http://ortools_service:4008/solver`;
 
-    try {
-        // Send problem details to OR-Tools service to start execution
-        const ortoolsResponse = await axios.post(ortoolsUrl, {
-            problemType: problem.problemType,
-            problemDetails: problem.problemDetails,
-            sessionId: problem.sessionId,
-            executionId: execution.id
-        });
-
-        if (ortoolsResponse.data && ortoolsResponse.data.executionId) {
-            console.log(`Execution started for ID ${execution.id} in OR-Tools.`);
-        } else {
-            throw new Error('Failed to start execution in OR-Tools.');
-        }
-
-        // Notify RabbitMQ about the execution start
-        const message = {
-            action: 'execution_started',
-            executionId: execution.id,
-            problemId: problem.id,
-            sessionId: problem.sessionId,
-            status: 'in-progress',
-            message: `Execution started for problem ID: ${problem.id}`
-        };
-        sendMessageToQueue(message);  // Publish the message
-
-        await pollExecutionStatusAndSendUpdates(execution, browseServiceUrl);
-
-    } catch (execError) {
-        console.error('Error starting execution in OR-Tools:', execError.message);
-
-        await execution.update({ status: 'failed', result: execError.message });
-        await axios.patch(`${browseServiceUrl}/${problem.id}`, {
-            status: 'failed',
-            result: execError.message
-        });
-
-        // Notify RabbitMQ about execution failure
-        const failureMessage = {
-            action: 'execution_failed',
-            executionId: execution.id,
-            problemId: problem.id,
-            message: `Execution failed for problem ID: ${problem.id}`,
-            error: execError.message
-        };
-        sendMessageToQueue(failureMessage);
-    }
-}
-
-async function pollExecutionStatusAndSendUpdates(execution, browseServiceUrl) {
-    const ortoolsStatusUrl = `http://ortools_service:4008/status/${execution.id}`;
-    let pollInterval = 5000; // Poll every 5 seconds
-
-    const poll = setInterval(async () => {
-        try {
-            const response = await axios.get(ortoolsStatusUrl);
-            const { status, result, progress, metaData } = response.data;
-
-            // Update the execution status, result, and progress in the database
-            await execution.update({
-                status,
-                result: result || null,
-                progress: progress || execution.progress,
-                metaData: metaData || execution.metaData
-            });
-
-            // Notify the browse service about the execution status update
-            await axios.patch(`${browseServiceUrl}/${execution.problemId}`, {
-                status,
-                result,
-                progress,
-                metaData
-            });
-
-            // Send a message to RabbitMQ with the status update
-            const updateMessage = {
-                action: 'execution_status_updated',
-                executionId: execution.id,
-                problemId: execution.problemId,
-                status,
-                progress,
-                metaData,
-                message: `Execution status updated for problem ID: ${execution.problemId}`
-            };
-            sendMessageToQueue(updateMessage);  // Publish the update to RabbitMQ
-
-            // Stop polling if execution is completed or failed
-            if (status === 'completed' || status === 'failed') {
-                clearInterval(poll);
-                console.log(`Execution ${execution.id} ${status}. Polling stopped.`);
-            }
-
-        } catch (pollError) {
-            console.error('Error polling OR-Tools Service:', pollError.message);
-        }
-    }, pollInterval);
-}
 // Function to update the execution metadata and input data
 exports.updateExecution = async (req, res) => {
     const { executionId } = req.params;

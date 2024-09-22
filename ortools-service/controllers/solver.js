@@ -6,7 +6,7 @@ const { sendMessageToQueue } = require('../utils/rabbitmq/publisher'); // Import
 // Solver function to process the problem
 exports.solver = async (req, res) => {
     try {
-        const { problemType, problemDetails, sessionId } = req.body;
+        const { problemType, problemDetails, sessionId, executionId } = req.body;
 
         // Validate incoming data
         if (!problemType || !problemDetails || problemType !== 'vrp') {
@@ -39,7 +39,7 @@ exports.solver = async (req, res) => {
         console.log('Meta Data:', meta);
         console.log('Input Data:', input);
 
-        // Publish an event that the solver has started to RabbitMQ
+        // Publish an event that the solver has started to RabbitMQ, using the queue for the execution
         sendMessageToQueue({
             action: 'solver_started',
             sessionId,
@@ -47,7 +47,7 @@ exports.solver = async (req, res) => {
             meta,
             message: 'Solver execution has started',
             progress: 0
-        });
+        }, `execution_updates_${executionId}`);
 
         // Construct the command to run the Python script using spawn
         const scriptPath = path.resolve(__dirname, 'vrpSolver.py');
@@ -80,7 +80,7 @@ exports.solver = async (req, res) => {
                     progress,
                     partialResult: progressUpdate.partialResult || null,
                     message: 'Solver progress update'
-                });
+                }, `execution_updates_${executionId}`);
 
             } catch (parseError) {
                 console.log('Non-JSON output received, streaming raw output.');
@@ -96,7 +96,7 @@ exports.solver = async (req, res) => {
                     problemType,
                     rawOutput: output,
                     message: 'Solver raw output received'
-                });
+                }, `execution_updates_${executionId}`);
             }
         });
 
@@ -113,7 +113,7 @@ exports.solver = async (req, res) => {
                     problemType,
                     message: 'Solver execution completed successfully',
                     progress: 100
-                });
+                }, `execution_updates_${executionId}`);
 
             } else {
                 res.write(JSON.stringify({
@@ -129,7 +129,7 @@ exports.solver = async (req, res) => {
                     problemType,
                     message: 'Solver process failed',
                     error: 'Solver process exited with non-zero code: ' + code
-                });
+                }, `execution_updates_${executionId}`);
             }
         });
 
@@ -146,7 +146,7 @@ exports.solver = async (req, res) => {
                 problemType,
                 message: 'Solver encountered an error',
                 error: data.toString()
-            });
+            }, `execution_updates_${executionId}`);
         });
 
     } catch (error) {

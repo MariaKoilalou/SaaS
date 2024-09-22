@@ -125,9 +125,6 @@
 <!-- Polling-based Status Updates -->
 <script>
     const executionId = document.getElementById('execution-id').textContent;
-    const statusMessage = document.getElementById('status-message');
-    const progressBar = document.getElementById('progress-bar');
-    const updatesList = document.getElementById('updates-list');
 
     // Poll the server every 5 seconds to get execution updates
     const pollInterval = 5000;
@@ -147,31 +144,19 @@
         document.getElementById('execution-status').textContent = data.status;
 
         if (data.status === 'in-progress') {
-            statusMessage.textContent = 'Execution is in progress...';
-            progressBar.style.width = `${data.progress || 0}%`;
-            progressBar.textContent = `${data.progress || 0}%`;
+            document.getElementById('status-message').textContent = 'Execution in progress...';
+            document.getElementById('progress-bar').style.width = `${data.progress}%`;
         } else if (data.status === 'completed') {
-            statusMessage.textContent = 'Execution completed successfully!';
-            progressBar.style.width = '100%';
-            progressBar.textContent = '100%';
-            progressBar.classList.remove('bg-success');
-            progressBar.classList.add('bg-info');
+            document.getElementById('status-message').textContent = 'Execution completed!';
         } else if (data.status === 'failed') {
-            statusMessage.textContent = 'Execution failed.';
-            progressBar.style.width = '100%';
-            progressBar.textContent = 'Failed';
-            progressBar.classList.remove('bg-success');
-            progressBar.classList.add('bg-danger');
+            document.getElementById('status-message').textContent = 'Execution failed.';
         }
-
-        const updateItem = document.createElement('li');
-        updateItem.textContent = `Update: ${data.message || 'No additional details.'} (Progress: ${data.progress || 0}%)`;
-        updatesList.appendChild(updateItem);
     }
 
     // Start polling
     setInterval(fetchExecutionStatus, pollInterval);
 </script>
+
 
 </body>
 </html>

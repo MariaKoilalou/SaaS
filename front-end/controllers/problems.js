@@ -132,6 +132,25 @@ exports.browseProblems = async (req, res) => {
     }
 };
 
+exports.getProblemStatus = async (req, res) => {
+    const url = `http://browse_problems_service:4003/status`; // The Browse Problems Service status endpoint
+
+    try {
+        // Send a GET request to fetch status updates for the session
+        const response = await axios.get(url, {
+            params: { sessionId: req.session.id }  // Pass sessionId as a query parameter
+        });
+
+        // Send the status updates back to the frontend (browser) as JSON
+        res.json(response.data);
+
+    } catch (error) {
+        console.error('Error fetching status updates:', error.message);
+        res.status(500).json({ message: 'Error fetching problem status updates.' });
+    }
+};
+
+
 exports.deleteProblem = async (req, res) => {
     const problemId = req.params.problemId;
     const manageServiceUrl = `http://manage_problems_service:4004/delete/${problemId}`;
