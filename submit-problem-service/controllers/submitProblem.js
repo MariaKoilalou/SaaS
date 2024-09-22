@@ -59,12 +59,11 @@ exports.submit = async (req, res) => {
                 newBalance
             });
 
-            // Extract the executionId from the response
             const executionId = manageResponse.data.executionId;
             console.log('Received executionId from manage_problems_service:', executionId);
 
             // Update the balance in credits service
-            const creditsServiceUrl = 'http://credits_service:4002/credits/update';
+            const creditsServiceUrl = 'http://buy_credits_service:4002/update';
             try {
                 await axios.post(creditsServiceUrl, {
                     sessionId,

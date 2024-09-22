@@ -6,7 +6,11 @@ const io = require('../utils/socket'); // Assuming you have a socket setup
 
 // Function to create a problem and start execution
 exports.getProblem = async (req, res) => {
-    const { sessionId, newBalance, problemType, problemDetails } = req.body;
+    const sessionId = req.body.sessionId;
+    const problemType = req.body.problemType;
+    const newBalance = req.body.newBalance;
+    const problemDetails = req.body;
+
     const browseServiceUrl = 'http://browse_problems_service:4003/problems';
 
     try {
@@ -22,9 +26,9 @@ exports.getProblem = async (req, res) => {
         }
 
         const newProblem = await models.Problem.create({
-            problemType,
-            sessionId,
-            problemDetails
+            problemType: problemType,
+            sessionId: sessionId,
+            problemDetails: problemDetails
         });
 
         const newExecution = await models.Execution.create({
@@ -48,8 +52,8 @@ exports.getProblem = async (req, res) => {
             executionId: newExecution.id
         });
 
-        // Start execution and begin polling for status updates
-        await startExecutionAndPoll(newProblem, newExecution, browseServiceUrl);
+        // Start execution and send real-time updates via WebSocket
+        await startExecutionAndSendUpdates(newProblem, newExecution, browseServiceUrl);
 
     } catch (error) {
         console.error('Error in Manage Problem Service:', error.message);
@@ -57,8 +61,9 @@ exports.getProblem = async (req, res) => {
     }
 };
 
-// Helper function to start execution in OR-Tools Service and poll for status updates
-async function startExecutionAndPoll(problem, execution, browseServiceUrl) {
+// Helper function to start execution in OR-Tools Service and send updates through WebSocket
+async function startExecutionAndSendUpdates(problem, execution, browseServiceUrl) {
+    const io = require('../utils/socket').getIO(); // Get Socket.IO instance
     const ortoolsUrl = `http://ortools_service:4008/solver`;
 
     try {
@@ -76,29 +81,34 @@ async function startExecutionAndPoll(problem, execution, browseServiceUrl) {
             throw new Error('Failed to start execution in OR-Tools.');
         }
 
-        await pollExecutionStatus(execution, browseServiceUrl);
+        // Emit WebSocket event to notify frontend about the execution start
+        io.emit('executionStarted', {
+            executionId: execution.id,
+            message: `Execution started for problem ID: ${problem.id}`,
+            status: 'in-progress'
+        });
+
+        await pollExecutionStatusAndSendUpdates(execution, browseServiceUrl, io);
 
     } catch (execError) {
         console.error('Error starting execution in OR-Tools:', execError.message);
 
-        // Mark execution as failed and notify Browse Problem Service
         await execution.update({ status: 'failed', result: execError.message });
-
         await axios.patch(`${browseServiceUrl}/${problem.id}`, {
             status: 'failed',
             result: execError.message
         });
 
-        io.getIO().emit('executionFailed', {
-            message: `Execution failed for problem ID: ${problem.id}`,
+        io.emit('executionFailed', {
             executionId: execution.id,
+            message: `Execution failed for problem ID: ${problem.id}`,
             error: execError.message
         });
     }
 }
 
-// Poll OR-Tools service for execution status updates
-async function pollExecutionStatus(execution, browseServiceUrl) {
+// Poll OR-Tools service for execution status updates and send WebSocket updates
+async function pollExecutionStatusAndSendUpdates(execution, browseServiceUrl, io) {
     const ortoolsStatusUrl = `http://ortools_service:4008/status/${execution.id}`;
     let pollInterval = 5000; // Poll every 5 seconds
 
@@ -115,7 +125,6 @@ async function pollExecutionStatus(execution, browseServiceUrl) {
                 metaData: metaData || execution.metaData
             });
 
-            // Notify the Browse Problem Service about the update
             await axios.patch(`${browseServiceUrl}/${execution.problemId}`, {
                 status,
                 result,
@@ -123,13 +132,13 @@ async function pollExecutionStatus(execution, browseServiceUrl) {
                 metaData
             });
 
-            // Emit WebSocket message to notify frontend of the status update
-            io.getIO().emit('executionStatusUpdate', {
-                message: `Execution updated for problem ID: ${execution.problemId}`,
+            // Emit WebSocket event for real-time status update
+            io.emit('executionStatusUpdate', {
                 executionId: execution.id,
                 status,
                 progress,
-                metaData
+                metaData,
+                message: `Execution status updated for problem ID: ${execution.problemId}`
             });
 
             // Stop polling if execution is completed or failed

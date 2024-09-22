@@ -1,10 +1,12 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const socket = require('../utils/socket'); // Import socket utility to access Socket.IO
 
 // Solver function to process the problem
 exports.solver = async (req, res) => {
     try {
+        const io = socket.getIO();
         const { problemType, problemDetails, sessionId } = req.body;
 
         // Validate incoming data
@@ -23,11 +25,7 @@ exports.solver = async (req, res) => {
         }
 
         // Metadata: numVehicles, depot, maxDistance
-        const meta = {
-            numVehicles,
-            depot,
-            maxDistance
-        };
+        const meta = { numVehicles, depot, maxDistance };
 
         // Input Data: locationFile
         const input = {
@@ -42,13 +40,17 @@ exports.solver = async (req, res) => {
         console.log('Meta Data:', meta);
         console.log('Input Data:', input);
 
+        // Emit an event that the solver has started
+        io.emit('solverStarted', {
+            sessionId,
+            problemType,
+            meta,
+            message: 'Solver execution has started',
+            progress: 0
+        });
+
         // Construct the command to run the Python script using spawn
         const scriptPath = path.resolve(__dirname, 'vrpSolver.py');
-        const command = `python3 ${scriptPath} ${input.locationFilePath} ${meta.numVehicles} ${meta.depot} ${meta.maxDistance}`;
-
-        console.log('Executing command:', command);
-
-        // Use spawn to execute the Python script and stream the output
         const solverProcess = spawn('python3', [scriptPath, input.locationFilePath, meta.numVehicles, meta.depot, meta.maxDistance]);
 
         // Set response headers for streaming
@@ -63,21 +65,41 @@ exports.solver = async (req, res) => {
             const output = data.toString();
             console.log('VRP Solver Output:', output);
 
-            // Parse progress or partial results from the output
             try {
                 const progressUpdate = JSON.parse(output);
+                const progress = progressUpdate.progress || null;
+
                 // Send partial results/progress to the client
                 res.write(JSON.stringify({
                     status: 'in-progress',
-                    progress: progressUpdate.progress || null,
+                    progress,
                     partialResult: progressUpdate.partialResult || null
                 }) + '\n');
+
+                // Emit a Socket.IO event with the progress update
+                io.emit('solverProgress', {
+                    sessionId,
+                    problemType,
+                    progress,
+                    partialResult: progressUpdate.partialResult || null,
+                    message: 'Solver progress update'
+                });
+
             } catch (parseError) {
                 console.log('Non-JSON output received, streaming raw output.');
                 res.write(JSON.stringify({
                     status: 'in-progress',
                     rawOutput: output
                 }) + '\n');
+
+                // Emit raw progress updates as well
+                io.emit('solverProgress', {
+                    sessionId,
+                    problemType,
+                    progress: null,
+                    rawOutput: output,
+                    message: 'Solver raw output received'
+                });
             }
         });
 
@@ -86,12 +108,29 @@ exports.solver = async (req, res) => {
             if (code === 0) {
                 res.write(JSON.stringify({ status: 'completed', progress: 100 }) + '\n');
                 res.end();
+
+                // Emit a completion event via Socket.IO
+                io.emit('solverCompleted', {
+                    sessionId,
+                    problemType,
+                    message: 'Solver execution completed successfully',
+                    progress: 100
+                });
+
             } else {
                 res.write(JSON.stringify({
                     status: 'failed',
                     error: 'Solver process exited with non-zero code: ' + code
                 }) + '\n');
                 res.end();
+
+                // Emit a failure event via Socket.IO
+                io.emit('solverFailed', {
+                    sessionId,
+                    problemType,
+                    message: 'Solver process failed',
+                    error: 'Solver process exited with non-zero code: ' + code
+                });
             }
         });
 
@@ -100,6 +139,14 @@ exports.solver = async (req, res) => {
             console.error('Error in VRP Solver:', data.toString());
             res.write(JSON.stringify({ status: 'error', error: data.toString() }) + '\n');
             res.end();
+
+            // Emit an error event via Socket.IO
+            io.emit('solverError', {
+                sessionId,
+                problemType,
+                message: 'Solver encountered an error',
+                error: data.toString()
+            });
         });
 
     } catch (error) {

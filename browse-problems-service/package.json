@@ -21,6 +21,7 @@
     "express-session": "^1.18.0",
     "jwt-decode": "^4.0.0",
     "pg": "^8.11.5",
-    "sequelize": "^6.37.3"
+    "sequelize": "^6.37.3",
+    "socket.io": "^4.7.5"
   }
 }

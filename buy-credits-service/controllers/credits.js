@@ -1,11 +1,30 @@
-const axios = require('axios');
 const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
 const initModels = require("../models/init-models");
 const models = initModels(sequelize);
-const session = require('express-session');
-const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
-exports.buy = async (req, res) => {
+exports.getBalance = async (req, res) => {
+    const sessionId = req.query.sessionId;  // Get sessionId from query params
+    console.error(`fetching balance for ${sessionId}`);
+
+    try {
+        let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
+
+        if (!sessionData) {
+            return res.status(404).json({ message: 'Session not found', balance: 0 });
+        }
+
+        const sessionParsedData = JSON.parse(sessionData.data || '{}');
+        const balance = sessionParsedData.balance || 0;
+
+        return res.status(200).json({ balance });
+    } catch (error) {
+        console.error('Error fetching session balance:', error.message);
+        return res.status(500).json({ message: 'Internal server error', balance: 0 });
+    }
+};
+
+
+exports.buyCredits = async (req, res) => {
     const creditsToAdd = req.body.credits;
     const sessionId = req.body.sessionId;
     const currentBalance = Number(req.body.currentBalance);
@@ -69,7 +88,7 @@ exports.buy = async (req, res) => {
     }
 };
 
-exports.update = async (req, res) => {
+exports.updateCredits = async (req, res) => {
     const { sessionId, newBalance } = req.body;
 
     // Validate the request payload

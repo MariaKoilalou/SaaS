@@ -128,6 +128,7 @@ exports.showManageProblem = (req, res) => {
 
     res.render('manageProblem.ejs', {
         executionId,
+
         sessionBalance: req.session.balance || 0
     });
 };

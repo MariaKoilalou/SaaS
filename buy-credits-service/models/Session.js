@@ -1,7 +1,7 @@
 module.exports = function(sequelize, DataTypes) {
     return sequelize.define('Session', {
         sid: {
-            type: DataTypes.TEXT,
+            type: DataTypes.STRING,
             allowNull: false,
             primaryKey: true
         },
