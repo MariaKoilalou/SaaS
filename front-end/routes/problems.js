@@ -11,7 +11,7 @@ router.get('/show', problemsController.browseProblems);
 
 router.get('/status', problemsController.getProblemStatus);
 
-router.get('/manage/:problemId', problemsController.showManageProblem);
+router.get('/manage/:executionId', problemsController.showManageProblem);
 
 router.get('/delete/:problemId', problemsController.deleteProblem);
 

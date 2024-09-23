@@ -26,7 +26,6 @@ exports.renderSubmitProblemForm = (req, res) => {
 
 exports.handleSubmitProblem = async (req, res) => {
     const submitProblemUrl = `http://submit_problem_service:4001/submit`;
-    const updateCreditsUrl = `http://buy_credits_service:4002/update`;  // The credits microcontroller URL
 
     console.log('Received a POST request to /submit');
     console.log('Request body:', req.body);
@@ -69,10 +68,10 @@ exports.handleSubmitProblem = async (req, res) => {
             };
         }
 
+        // Send the problem to submit_problem_service
         const response = await axios.post(submitProblemUrl, payload);
 
         if (response.status !== 200) {
-            // Handle failure to submit problem
             console.log('Problem submission failed:', response.data.message);
             return res.render('submitProblem.ejs', {
                 sessionBalance: req.session.balance || 0,
@@ -80,7 +79,6 @@ exports.handleSubmitProblem = async (req, res) => {
                 message: null
             });
         } else {
-            // Extract the executionId from the response
             const executionId = response.data.executionId;
 
             console.log('Received executionId from submit_problem_service:', executionId);
@@ -88,13 +86,11 @@ exports.handleSubmitProblem = async (req, res) => {
             // Deduct 1 from session balance
             req.session.balance -= 1;
             await req.session.save();  // Save updated balance in session
-            console.log(`${req.session.balance}`);
 
-            // Redirect to the manageProblem.ejs page with the executionId
-            return res.redirect(`manage/${executionId}`);
+            // Redirect to manage page with the executionId
+            return res.redirect(`manage/${executionId}`);  // Pass the executionId to the manage page
         }
     } catch (error) {
-        // Handle any errors during the process
         console.error('Error submitting problem:', error.message);
         return res.render('submitProblem.ejs', {
             sessionBalance: req.session.balance || 0,
@@ -103,6 +99,7 @@ exports.handleSubmitProblem = async (req, res) => {
         });
     }
 };
+
 
 
 exports.browseProblems = async (req, res) => {

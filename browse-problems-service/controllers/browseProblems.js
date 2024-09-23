@@ -87,7 +87,7 @@ exports.show = async (req, res) => {
 };
 
 exports.updateProblem = async (req, res) => {
-    const { status, progress, result } = req.body;
+    // const { status, progress, result } = req.body;
     const problemId = req.params.problemId; // Extract problemId from URL parameters
 
     try {
@@ -105,7 +105,7 @@ exports.updateProblem = async (req, res) => {
         //     result: result || null
         // });
 
-        console.log(`Problem ${problemId} updated successfully with status ${status}`);
+        console.log(`Problem ${problemId} updated successfully`);
         return res.status(200).json({ message: `Problem ${problemId} updated successfully.` });
 
     } catch (error) {

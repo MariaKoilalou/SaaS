@@ -15,10 +15,6 @@ module.exports = function(sequelize, DataTypes) {
                 key: 'sid'
             }
         },
-        status: {
-            type: DataTypes.STRING,
-            allowNull: true
-        },
         title: {
             type: DataTypes.STRING,
             allowNull: true

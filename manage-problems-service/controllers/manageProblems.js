@@ -5,16 +5,14 @@ const models = initModels(sequelize);
 const { sendMessageToQueue } = require('../utils/rabbitmq/publisher');
 const { consumeMessagesFromQueue } = require('../utils/rabbitmq/consumer'); // RabbitMQ consumer
 
-
 exports.getProblem = async (req, res) => {
     const sessionId = req.body.sessionId;
-    const problemType = req.body.problemType;
     const newBalance = req.body.newBalance;
-    const problemDetails = req.body; // Make sure to validate problemDetails properly
-    const ortoolsUrl = 'http://ortools_service:4008/solver';
+    const problemType = req.body.problemType;
+    const problemDetails = req.body;
 
     try {
-        // Check if session exists or create a new one
+
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
 
         if (!sessionData) {
@@ -26,44 +24,47 @@ exports.getProblem = async (req, res) => {
             });
         }
 
-        // Send problem details to OR-Tools service
-        const ortoolsResponse = await axios.post(ortoolsUrl, {
+        // Create new problem and execution entry
+        const newProblem = await models.Problem.create({
+            problemType,
+            sessionId,
+            problemDetails
+        });
+
+        const newExecution = await models.Execution.create({
+            problemId: newProblem.id,
+            status: 'pending',
+            result: null,
+            metaData: {},
+            inputData: {}
+        });
+
+        console.log('Execution created with ID:', newExecution.id);
+
+        res.status(200).json({
+            message: 'Problem created and execution started.',
+            executionId: newExecution.id
+        });
+
+        const browseProblemsUrl = 'http://browse_problems_service:4003/problem';
+        await axios.post(browseProblemsUrl, {
             sessionId,
             problemType,
             problemDetails
         });
 
-        const { metaData, inputData } = ortoolsResponse.data; // OR-Tools response with meta and input data
-
-        // Create a new problem in the database
-        const newProblem = await models.Problem.create({
-            problemType: problemType,
-            sessionId: sessionId,
-            problemDetails: problemDetails
+        // Start OR-Tools execution in the background
+        const ortoolsUrl = 'http://ortools_service:4008/solver';
+        await axios.post(ortoolsUrl, {
+            sessionId,
+            problemType,
+            problemDetails,
+            executionId: newExecution.id // Pass executionId to OR-Tools
         });
-
-        // Create an execution in the database with pending status
-        const newExecution = await models.Execution.create({
-            problemId: newProblem.id,
-            status: 'pending',
-            result: null,
-            metaData: JSON.stringify(metaData),
-            inputData: JSON.stringify(inputData)
-        });
-
-        console.log('Execution created with ID:', newExecution.id);
-
-        // Respond to client with the pending execution status
-        res.status(200).json({
-            message: 'Problem created and execution started with pending status.',
-            executionId: newExecution.id
-        });
-
-        // Start listening for RabbitMQ updates on this execution
-        consumeMessagesFromQueue(newProblem.id, newExecution.id); // Here we use the refactored consumer
 
     } catch (error) {
         console.error('Error in Manage Problem Service:', error.message);
+        console.error('Full error:', error);
         return res.status(500).json({ message: 'Internal server error. Unable to start the problem execution.' });
     }
 };

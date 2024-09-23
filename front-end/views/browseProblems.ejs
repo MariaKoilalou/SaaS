@@ -74,14 +74,14 @@
             <% problems.forEach(problem => { %>
                 <tr data-problem-id="<%= problem.id %>">
                     <td><%= problem.dateCreated %></td>
-                    <td class="status-column"><%= problem.status %></td>
+<!--                    <td class="status-column"> <%= problem.status %> </td>-->
                     <td class="problem-actions">
                         <a href="/problems/manage/<%= problem.id %>" class="btn btn-sm btn-primary">View/Edit</a>
-                        <% if (problem.status === 'executed') { %>
+<!--                        <% if (problem.status === 'executed') { %>-->
                             <a href="/problems/results/<%= problem.id %>" class="btn btn-sm btn-info">View Results</a>
-                        <% } else { %>
+<!--                        <% } else { %>-->
                             <button class="btn btn-sm btn-secondary" disabled>View Results</button>
-                        <% } %>
+<!--                        <% } %>-->
                         <a href="/problems/delete/<%= problem.id %>" class="btn btn-sm btn-danger">Delete</a>
                     </td>
                 </tr>
@@ -120,45 +120,45 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Poll for Problem Status Updates -->
-<script>
-    const pollInterval = 5000; // Poll every 5 seconds
+<!--<script>-->
+<!--    const pollInterval = 5000; // Poll every 5 seconds-->
 
-    // Fetch problem status updates from the /problems/status endpoint
-    function fetchProblemStatusUpdates() {
-        fetch('/problems/status')
-            .then(response => response.json())
-            .then(data => {
-                if (data.problems) {
-                    updateProblemStatus(data.problems);
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching problem status updates:', error);
-            });
-    }
+<!--    // Fetch problem status updates from the /problems/status endpoint-->
+<!--    function fetchProblemStatusUpdates() {-->
+<!--        fetch('/problems/status')-->
+<!--            .then(response => response.json())-->
+<!--            .then(data => {-->
+<!--                if (data.problems) {-->
+<!--                    updateProblemStatus(data.problems);-->
+<!--                }-->
+<!--            })-->
+<!--            .catch(error => {-->
+<!--                console.error('Error fetching problem status updates:', error);-->
+<!--            });-->
+<!--    }-->
 
-    // Update the problem statuses in the table
-    function updateProblemStatus(problems) {
-        problems.forEach(problem => {
-            const problemRow = document.querySelector(`tr[data-problem-id="${problem.id}"]`);
-            if (problemRow) {
-                const statusColumn = problemRow.querySelector('.status-column');
-                statusColumn.textContent = problem.status;
+<!--    // Update the problem statuses in the table-->
+<!--    function updateProblemStatus(problems) {-->
+<!--        problems.forEach(problem => {-->
+<!--            const problemRow = document.querySelector(`tr[data-problem-id="${problem.id}"]`);-->
+<!--            if (problemRow) {-->
+<!--                const statusColumn = problemRow.querySelector('.status-column');-->
+<!--                statusColumn.textContent = problem.status;-->
 
-                // Optionally update action buttons based on new status
-                const resultButton = problemRow.querySelector('.btn-info');
-                if (problem.status === 'executed') {
-                    resultButton.disabled = false; // Enable the "View Results" button
-                } else {
-                    resultButton.disabled = true;  // Disable the "View Results" button
-                }
-            }
-        });
-    }
+<!--                // Optionally update action buttons based on new status-->
+<!--                const resultButton = problemRow.querySelector('.btn-info');-->
+<!--                if (problem.status === 'executed') {-->
+<!--                    resultButton.disabled = false; // Enable the "View Results" button-->
+<!--                } else {-->
+<!--                    resultButton.disabled = true;  // Disable the "View Results" button-->
+<!--                }-->
+<!--            }-->
+<!--        });-->
+<!--    }-->
 
-    // Start polling for problem status updates
-    setInterval(fetchProblemStatusUpdates, pollInterval);
-</script>
+<!--    // Start polling for problem status updates-->
+<!--    setInterval(fetchProblemStatusUpdates, pollInterval);-->
+<!--</script>-->
 
 </body>
 </html>

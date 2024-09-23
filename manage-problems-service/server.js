@@ -19,7 +19,7 @@ sequelize
     .then(() => {
         sequelize
             .sync({
-                force: false, // Set this to `true` only for development, not in production
+                force: true, // Set this to `true` only for development, not in production
             })
             .then((result) => {
                 // Start the HTTP server on the specified port

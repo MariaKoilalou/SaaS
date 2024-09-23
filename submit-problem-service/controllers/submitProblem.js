@@ -2,7 +2,11 @@ const axios = require('axios');
 
 exports.submit = async (req, res) => {
     try {
-        const { problemType, sessionId, sessionBalance, locationFile, numVehicles, depot, maxDistance, objectiveFunction, constraints, optGoal, itemWeights, itemValues, capacity } = req.body;
+        const {
+            problemType, sessionId, sessionBalance, locationFile,
+            numVehicles, depot, maxDistance, objectiveFunction,
+            constraints, optGoal, itemWeights, itemValues, capacity
+        } = req.body;
 
         // Check if problemType and sessionId are provided
         if (!problemType || !sessionId) {
@@ -39,8 +43,6 @@ exports.submit = async (req, res) => {
             payload.itemWeights = itemWeights.split(',').map(Number);
             payload.itemValues = itemValues.split(',').map(Number);
             payload.capacity = capacity;
-        } else {
-            return res.status(400).json({ message: 'Invalid problem type' });
         }
 
         // Log payload before sending
@@ -49,53 +51,38 @@ exports.submit = async (req, res) => {
         // Simulate session balance deduction
         const newBalance = sessionBalance - 1;
 
-        // Send the problem to the manage_problems_service and start execution
         const manageServiceUrl = 'http://manage_problems_service:4004/problems';
 
         try {
             const manageResponse = await axios.post(manageServiceUrl, {
                 ...payload,
                 sessionId,
+                problemType,
                 newBalance
             });
 
             const executionId = manageResponse.data.executionId;
-            console.log('Received executionId from manage_problems_service:', executionId);
 
-            // Update the balance in credits service
+            // Update balance in buy_credits_service
             const creditsServiceUrl = 'http://buy_credits_service:4002/update';
-            try {
-                await axios.post(creditsServiceUrl, {
-                    sessionId,
-                    newBalance
-                });
-                console.log('New balance updated in credits_service:', newBalance);
+            await axios.post(creditsServiceUrl, {
+                sessionId,
+                newBalance
+            });
 
-                return res.status(200).json({
-                    message: 'Problem submitted successfully',
-                    newBalance,
-                    executionId
-                });
-
-            } catch (creditsError) {
-                console.error('Error updating balance in credits_service:', creditsError.message);
-                return res.status(500).json({
-                    message: 'Problem submitted, but failed to update balance in credits_service.',
-                    executionId,
-                    error: creditsError.message
-                });
-            }
+            return res.status(200).json({
+                message: 'Problem submitted successfully',
+                newBalance,
+                executionId
+            });
 
         } catch (manageError) {
-            console.error('Error sending problem to manage_problems_service:', manageError.message);
             return res.status(500).json({
                 message: 'Failed to submit problem to manage_problems_service.',
                 error: manageError.message
             });
         }
-
     } catch (error) {
-        console.error('Error processing problem submission:', error.message);
         return res.status(500).json({
             message: 'Internal server error. Unable to process the problem submission.',
             error: error.message

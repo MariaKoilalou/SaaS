@@ -11,9 +11,7 @@ sequelize
     .then(() => {
         sequelize
             .sync({
-                // delete if system is ready to deploy
                 force: true,
-                // end
             })
             .then((result) => {
                 app.listen(port, () => {

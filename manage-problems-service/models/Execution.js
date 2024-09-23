@@ -12,7 +12,8 @@ module.exports = (sequelize, DataTypes) => {
             references: {
                 model: 'Problem',
                 key: 'id'
-            }
+            },
+            allowNull: false
         },
         status: {
             type: Sequelize.ENUM('pending', 'started', 'completed', 'failed', 'cancelled', 'in-progress'),
@@ -20,6 +21,14 @@ module.exports = (sequelize, DataTypes) => {
         },
         result: {
             type: DataTypes.TEXT,
+            allowNull: true
+        },
+        metaData: {
+            type: DataTypes.JSON,
+            allowNull: true
+        },
+        inputData: {
+            type: DataTypes.JSON,
             allowNull: true
         }
     }, {
@@ -33,6 +42,6 @@ module.exports = (sequelize, DataTypes) => {
             fields: [
                 { name: "id" },
             ]
-        }, ]
+        }]
     });
 };

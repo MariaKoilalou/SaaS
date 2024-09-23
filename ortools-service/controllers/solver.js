@@ -1,9 +1,7 @@
+const {sendMessageToQueue} = require("../utils/rabbitmq/publisher");
 const { spawn } = require('child_process');
-const path = require('path');
-const fs = require('fs');
-const { sendMessageToQueue } = require('../utils/rabbitmq/publisher'); // Import RabbitMQ publisher
+const {resolve} = require("path");
 
-// Solver function to process the problem
 exports.solver = async (req, res) => {
     try {
         const { problemType, problemDetails, sessionId, executionId } = req.body;
@@ -18,61 +16,40 @@ exports.solver = async (req, res) => {
         // Extract metadata and input data from problemDetails
         const { locationFile, numVehicles, depot, maxDistance } = problemDetails;
 
-        // Ensure required metadata and input data are present
         if (!locationFile || !numVehicles || depot === undefined || !maxDistance) {
             return res.status(400).json({ message: 'Missing required VRP parameters.' });
         }
 
-        // Metadata: numVehicles, depot, maxDistance
-        const meta = { numVehicles, depot, maxDistance };
+        // Immediately send response to manage_problems_service to acknowledge problem start
+        res.status(200).json({
+            message: 'Solver execution started',
+            executionId
+        });
 
-        // Input Data: locationFile
-        const input = {
-            locationFilePath: path.resolve(__dirname, locationFile)
-        };
+        // Execute solver in background
+        const scriptPath = resolve(__dirname, 'vrpSolver.py');
+        const solverProcess = spawn('python3', [scriptPath, locationFile, numVehicles, depot, maxDistance]);
 
-        if (!fs.existsSync(input.locationFilePath)) {
-            return res.status(400).json({ message: 'Location file not found.' });
-        }
-
-        // Log metadata and input data for debugging
-        console.log('Meta Data:', meta);
-        console.log('Input Data:', input);
-
-        // Publish an event that the solver has started to RabbitMQ, using the queue for the execution
+        // Send initial progress update via RabbitMQ
         sendMessageToQueue({
             action: 'solver_started',
             sessionId,
             problemType,
-            meta,
+            meta: { numVehicles, depot, maxDistance },
             message: 'Solver execution has started',
             progress: 0
         }, `execution_updates_${executionId}`);
 
-        // Construct the command to run the Python script using spawn
-        const scriptPath = path.resolve(__dirname, 'vrpSolver.py');
-        const solverProcess = spawn('python3', [scriptPath, input.locationFilePath, meta.numVehicles, meta.depot, meta.maxDistance]);
-
-        // Send initial progress update to the client
-        res.write(JSON.stringify({ status: 'started', progress: 0 }) + '\n');
-
-        // Capture real-time output from the Python script
+        // Process output from the solver
         solverProcess.stdout.on('data', (data) => {
             const output = data.toString();
             console.log('VRP Solver Output:', output);
 
             try {
                 const progressUpdate = JSON.parse(output);
-                const progress = progressUpdate.progress || null;
+                const progress = progressUpdate.progress || 0;
 
-                // Send partial results/progress to the client
-                res.write(JSON.stringify({
-                    status: 'in-progress',
-                    progress,
-                    partialResult: progressUpdate.partialResult || null
-                }) + '\n');
-
-                // Publish progress update to RabbitMQ
+                // Send progress update via RabbitMQ
                 sendMessageToQueue({
                     action: 'solver_progress',
                     sessionId,
@@ -83,13 +60,7 @@ exports.solver = async (req, res) => {
                 }, `execution_updates_${executionId}`);
 
             } catch (parseError) {
-                console.log('Non-JSON output received, streaming raw output.');
-                res.write(JSON.stringify({
-                    status: 'in-progress',
-                    rawOutput: output
-                }) + '\n');
-
-                // Publish raw progress updates to RabbitMQ
+                console.log('Non-JSON output received, sending raw output.');
                 sendMessageToQueue({
                     action: 'solver_progress_raw',
                     sessionId,
@@ -100,13 +71,9 @@ exports.solver = async (req, res) => {
             }
         });
 
-        // Handle process completion
+        // Handle solver completion
         solverProcess.on('close', (code) => {
             if (code === 0) {
-                res.write(JSON.stringify({ status: 'completed', progress: 100 }) + '\n');
-                res.end();
-
-                // Publish completion event via RabbitMQ
                 sendMessageToQueue({
                     action: 'solver_completed',
                     sessionId,
@@ -114,43 +81,32 @@ exports.solver = async (req, res) => {
                     message: 'Solver execution completed successfully',
                     progress: 100
                 }, `execution_updates_${executionId}`);
-
             } else {
-                res.write(JSON.stringify({
-                    status: 'failed',
-                    error: 'Solver process exited with non-zero code: ' + code
-                }) + '\n');
-                res.end();
-
-                // Publish failure event to RabbitMQ
                 sendMessageToQueue({
                     action: 'solver_failed',
                     sessionId,
                     problemType,
                     message: 'Solver process failed',
-                    error: 'Solver process exited with non-zero code: ' + code
+                    error: `Solver process exited with non-zero code: ${code}`
                 }, `execution_updates_${executionId}`);
             }
         });
 
-        // Handle errors from the solver process
+        // Handle solver errors
         solverProcess.stderr.on('data', (data) => {
-            console.error('Error in VRP Solver:', data.toString());
-            res.write(JSON.stringify({ status: 'error', error: data.toString() }) + '\n');
-            res.end();
-
-            // Publish error event via RabbitMQ
+            const error = data.toString();
+            console.error('Error in VRP Solver:', error);
             sendMessageToQueue({
                 action: 'solver_error',
                 sessionId,
                 problemType,
                 message: 'Solver encountered an error',
-                error: data.toString()
+                error
             }, `execution_updates_${executionId}`);
         });
 
     } catch (error) {
-        console.error('Error processing problem in OR-Tools:', error.message);
+        console.error('Error in OR-Tools Solver:', error.message);
         return res.status(500).json({
             message: 'Internal server error. Unable to solve the problem.',
             error: error.message
