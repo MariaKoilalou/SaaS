@@ -99,11 +99,11 @@ exports.updateProblem = async (req, res) => {
         }
 
         // Update the problem's status, progress, and result in the database
-        await problem.update({
-            status: status,
-            progress: progress || null,
-            result: result || null
-        });
+        // await problem.update({
+        //     status: status,
+        //     progress: progress || null,
+        //     result: result || null
+        // });
 
         console.log(`Problem ${problemId} updated successfully with status ${status}`);
         return res.status(200).json({ message: `Problem ${problemId} updated successfully.` });
@@ -191,8 +191,6 @@ exports.getStatus = async (req, res) => {
         // Fetch all problems for the session
         const problems = await models.Problem.findAll({
             where: { sessionId: sessionId },
-            attributes: ['id', 'status'],  // Only return the id and status for updates
-            order: [['dateCreated', 'ASC']]
         });
 
         // Send the problems as a JSON response
