@@ -4,38 +4,17 @@ const initModels = require("../models/init-models");
 const models = initModels(sequelize);
 const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
-const { executionUpdates } = require('../utils/rabbitmq/consumer'); // Import the executionUpdates store
-
-// Controller to receive execution updates (from RabbitMQ through Manage Problem Service)
-exports.updateExecution = (req, res) => {
-    const { executionId, status, progress, result, metaData } = req.body;
-
-    // Store the execution update in memory
-    executionUpdates[executionId] = {
-        status,
-        progress,
-        result,
-        metaData
-    };
-
-    console.log(`Execution update received for ID: ${executionId}`);
-
-    return res.status(200).json({ message: 'Execution update stored successfully.' });
-};
 
 exports.showManageProblem = (req, res) => {
-    const { executionId } = req.params;
-
-    // Get the latest execution update for the given executionId from the in-memory store
-    const executionData = executionUpdates[executionId];
+    const { executionId, status, progress, result, metaData } = req.body;
 
     // Render the manage problem page, passing the execution data to the EJS template
     res.render('manageProblem.ejs', {
         executionId: executionId,
-        status: executionData ? executionData.status : 'Pending',
-        progress: executionData ? executionData.progress : 0,
-        result: executionData ? executionData.result : 'Not available',
-        metaData: executionData ? executionData.metaData : 'No metadata'
+        status: status ? status : 'Pending',
+        progress: progress ? progress.progress : 0,
+        result: result ? result.result : 'Not available',
+        metaData: metaData ? metaData.metaData : 'No metadata'
     });
 };
 

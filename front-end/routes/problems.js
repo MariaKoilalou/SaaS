@@ -11,10 +11,8 @@ router.get('/show', problemsController.browseProblems);
 
 router.get('/status', problemsController.getProblemStatus);
 
-router.get('/manage/:executionId', problemsController.showManageProblem);
+router.post('/manage/:executionId', problemsController.showManageProblem);
 
 router.get('/delete/:problemId', problemsController.deleteProblem);
-
-router.post('/update-execution', problemsController.updateExecution); // Use POST for updates
 
 module.exports = router;
