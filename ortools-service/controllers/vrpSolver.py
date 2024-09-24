@@ -97,19 +97,20 @@ def main():
     # Solve the problem and print progress
     solution = routing.SolveWithParameters(search_parameters)
     if solution:
-        # Simulate progress updates while printing the solution
         for progress in range(10, 101, 10):
-            print(json.dumps({"progress": progress}), flush=True)  # Progress updates
-            time.sleep(1)  # Simulate work being done
+            print(json.dumps({"progress": progress}), flush=True)
+            time.sleep(1)
 
-        # Final solution
         max_route_distance = print_solution(data, manager, routing, solution)
         print(json.dumps({
             "progress": 100,
-            "finalResult": f"Maximum route distance: {max_route_distance}m"
+            "finalResult": f"Maximum route distance: {max_route_distance}m",
+            "metaData": {
+                "numLocations": len(locations),
+                "numVehicles": num_vehicles,
+                "depot": depot
+            }
         }), flush=True)
-    else:
-        print(json.dumps({"error": "No solution found"}), flush=True)
 
 if __name__ == "__main__":
     main()
