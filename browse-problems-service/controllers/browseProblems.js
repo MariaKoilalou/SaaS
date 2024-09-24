@@ -67,7 +67,7 @@ exports.show = async (req, res) => {
     const currentPage = req.query.page || 1; // Get current page from query parameters or default to 1
     const offset = (currentPage - 1) * PROBLEMS_PER_PAGE; // Calculate offset for pagination
 
-    console.log('show: Received request for sessionId:', sessionId);
+    console.log('status: Received request for sessionId:', sessionId);
 
     try {
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });

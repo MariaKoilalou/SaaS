@@ -1,0 +1,11 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1727207575890,75,HTTP Request,200,OK,Thread Group 1-1,text,true,,249,166,1,1,http://localhost:4003/status?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,75,0,3
+1727207576894,17,HTTP Request,200,OK,Thread Group 1-2,text,true,,249,166,1,1,http://localhost:4003/status?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,17,0,0
+1727207577893,10,HTTP Request,200,OK,Thread Group 1-3,text,true,,249,166,1,1,http://localhost:4003/status?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,10,0,1
+1727207578893,19,HTTP Request,200,OK,Thread Group 1-4,text,true,,249,166,1,1,http://localhost:4003/status?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,19,0,1
+1727207579894,30,HTTP Request,200,OK,Thread Group 1-5,text,true,,249,166,1,1,http://localhost:4003/status?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,30,0,0
+1727207580893,9,HTTP Request,200,OK,Thread Group 1-6,text,true,,249,166,1,1,http://localhost:4003/status?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,9,0,1
+1727207581893,16,HTTP Request,200,OK,Thread Group 1-7,text,true,,249,166,1,1,http://localhost:4003/status?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,16,0,0
+1727207582893,15,HTTP Request,200,OK,Thread Group 1-8,text,true,,249,166,1,1,http://localhost:4003/status?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,15,0,0
+1727207583894,19,HTTP Request,200,OK,Thread Group 1-9,text,true,,249,166,1,1,http://localhost:4003/status?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,19,0,1
+1727207584894,10,HTTP Request,200,OK,Thread Group 1-10,text,true,,249,166,1,1,http://localhost:4003/status?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,10,0,1

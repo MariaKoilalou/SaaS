@@ -1,0 +1,11 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1727205163161,36,get balance,200,OK,Thread Group 1-1,text,true,,249,167,1,1,http://localhost:4002/balance?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,36,0,3
+1727205164160,33,get balance,200,OK,Thread Group 1-2,text,true,,249,167,1,1,http://localhost:4002/balance?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,33,0,0
+1727205165161,10,get balance,200,OK,Thread Group 1-3,text,true,,249,167,1,1,http://localhost:4002/balance?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,10,0,1
+1727205166159,29,get balance,200,OK,Thread Group 1-4,text,true,,249,167,1,1,http://localhost:4002/balance?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,29,0,1
+1727205167159,13,get balance,200,OK,Thread Group 1-5,text,true,,249,167,1,1,http://localhost:4002/balance?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,13,0,1
+1727205168162,29,get balance,200,OK,Thread Group 1-6,text,true,,249,167,1,1,http://localhost:4002/balance?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,29,0,1
+1727205169162,9,get balance,200,OK,Thread Group 1-7,text,true,,249,167,1,1,http://localhost:4002/balance?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,9,0,1
+1727205170161,30,get balance,200,OK,Thread Group 1-8,text,true,,249,167,1,1,http://localhost:4002/balance?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,30,0,2
+1727205171159,7,get balance,200,OK,Thread Group 1-9,text,true,,249,167,1,1,http://localhost:4002/balance?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,7,0,0
+1727205172159,46,get balance,200,OK,Thread Group 1-10,text,true,,249,167,1,1,http://localhost:4002/balance?sessionId=6VxERBmaJaIa-yD60EFziAEyvA4_vinH,46,0,1

@@ -1,0 +1,11 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1727216379195,201,HTTP Request,200,OK,Thread Group 1-1,text,true,,2818,253,1,1,http://localhost:4003/show,201,0,4
+1727216380198,23,HTTP Request,200,OK,Thread Group 1-2,text,true,,2818,253,1,1,http://localhost:4003/show,23,0,1
+1727216381198,32,HTTP Request,200,OK,Thread Group 1-3,text,true,,2818,253,1,1,http://localhost:4003/show,32,0,1
+1727216382198,32,HTTP Request,200,OK,Thread Group 1-4,text,true,,2818,253,1,1,http://localhost:4003/show,32,0,1
+1727216383198,23,HTTP Request,200,OK,Thread Group 1-5,text,true,,2818,253,1,1,http://localhost:4003/show,23,0,1
+1727216384199,24,HTTP Request,200,OK,Thread Group 1-6,text,true,,2818,253,1,1,http://localhost:4003/show,24,0,1
+1727216385199,17,HTTP Request,200,OK,Thread Group 1-7,text,true,,2818,253,1,1,http://localhost:4003/show,17,0,1
+1727216386199,23,HTTP Request,200,OK,Thread Group 1-8,text,true,,2818,253,1,1,http://localhost:4003/show,23,0,0
+1727216387199,23,HTTP Request,200,OK,Thread Group 1-9,text,true,,2818,253,1,1,http://localhost:4003/show,23,0,1
+1727216388199,19,HTTP Request,200,OK,Thread Group 1-10,text,true,,2818,253,1,1,http://localhost:4003/show,19,0,1

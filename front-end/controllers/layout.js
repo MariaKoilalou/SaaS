@@ -10,7 +10,7 @@ exports.getLanding = (req, res, next) => {
     // Clear session messages after copying to avoid showing them again on refresh
     req.session.messages = [];
 
-    // Now you can use these messages to show in the UI
+    // Now you can use these messages to status in the UI
     let messages = req.flash("messages");
 
     // Combine flash messages and service down messages

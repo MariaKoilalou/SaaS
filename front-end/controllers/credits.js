@@ -48,7 +48,7 @@ exports.buyCredits = async (req, res) => {
 
     // Validate the number of credits to buy
     if (!creditsToBuy || creditsToBuy <= 0) {
-        console.error('buyCredits: Invalid number of credits:', creditsToBuy);
+        console.error('getBalance: Invalid number of credits:', creditsToBuy);
         return res.status(400).json({ message: 'Invalid number of credits.' });
     }
 
@@ -67,9 +67,9 @@ exports.buyCredits = async (req, res) => {
         return res.redirect('/credits/');
 
     } catch (error) {
-        console.error('buyCredits: Error purchasing credits:', error.message);
+        console.error('getBalance: Error purchasing credits:', error.message);
         if (error.response) {
-            console.error('buyCredits: Error response data:', error.response.data);
+            console.error('getBalance: Error response data:', error.response.data);
         }
 
         // Render the page with an error message if the purchase fails
