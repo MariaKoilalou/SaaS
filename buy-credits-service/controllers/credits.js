@@ -1,9 +1,6 @@
-const axios = require('axios');
 const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
 const initModels = require("../models/init-models");
 const models = initModels(sequelize);
-const session = require('express-session');
-const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
 exports.getBalance = async (req, res) => {
     const sessionId = req.query.sessionId;  // Get sessionId from query params

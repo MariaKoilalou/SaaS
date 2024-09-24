@@ -1,24 +1,55 @@
-const sequelize = require('../utils/database');
-var initModels = require("../models/init-models");
-var models = initModels(sequelize);
+const axios = require('axios'); // For making HTTP requests to the Manage Problem Service
 
-exports.stats = async (req, res) => {
+exports.problems = async (req, res) => {
     try {
-        // Fetch all stats, including the associated problem details
-        const statistics = await Stats.findAll({
-            include: [{
-                model: Problems,
-                as: 'problem'  // Make sure your model association uses this alias
-            }]
+        const { problemIds } = req.body;
+
+        if (!problemIds || !Array.isArray(problemIds) || problemIds.length === 0) {
+            return res.status(400).json({
+                message: 'Invalid or missing problem IDs'
+            });
+        }
+
+        // Log received problem IDs
+        console.log('Received Problem IDs:', problemIds);
+
+        // Fetch executions from Manage Problem Service for the given problem IDs
+        const response = await axios.post('http://manage_problem_service:4004/executions', {
+            problemIds
         });
-        res.json({ success: true, data: statistics });
+
+        const executions = response.data;
+
+        // Filter executions to include only those with status 'completed' or 'failed'
+        const filteredExecutions = executions.filter(execution =>
+            execution.status === 'completed' || execution.status === 'failed'
+        );
+
+        // Calculate statistics
+        const totalExecutions = filteredExecutions.length;
+        const completedExecutions = filteredExecutions.filter(execution => execution.status === 'completed').length;
+        const failedExecutions = filteredExecutions.filter(execution => execution.status === 'failed').length;
+        const successRate = completedExecutions / totalExecutions * 100;
+
+        // If available, calculate average execution time for completed executions
+        const averageExecutionTime = filteredExecutions
+            .filter(execution => execution.status === 'completed' && execution.executionTime)
+            .reduce((acc, curr) => acc + curr.executionTime, 0) / completedExecutions || 0;
+
+        // Return the statistics in the response
+        return res.status(200).json({
+            totalExecutions,
+            completedExecutions,
+            failedExecutions,
+            successRate,
+            averageExecutionTime
+        });
+
     } catch (error) {
-        console.error('Failed to retrieve statistics:', error);
-        res.status(500).json({ success: false, message: 'Failed to retrieve statistics', error: error.message });
+        console.error('Error fetching executions from Manage Problem Service:', error);
+        res.status(500).json({
+            message: 'Failed to fetch executions from Manage Problem Service',
+            error: error.message
+        });
     }
 };
-
-
-exports.problems = (req, res, next) => {
-
-}

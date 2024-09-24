@@ -5,6 +5,33 @@ const models = initModels(sequelize);
 const { sendExecutionUpdateToQueue } = require('../utils/rabbitmq/publisher');
 const { consumeMessagesFromQueue } = require('../utils/rabbitmq/consumer');  // RabbitMQ consumer
 
+exports.getExecutionDetails = async (req, res) => {
+    try {
+        // Fetch all executions from the database
+        const executions = await models.Execution.findAll();
+
+        // Check if any executions were found
+        if (!executions || executions.length === 0) {
+            return res.status(404).json({
+                message: 'No executions found'
+            });
+        }
+
+        // Send back the execution details to the Problem Stats Service
+        res.status(200).json({
+            message: 'Executions fetched successfully',
+            executions: executions // Sending all the execution data
+        });
+
+    } catch (error) {
+        console.error('Error fetching executions:', error);
+        res.status(500).json({
+            message: 'Failed to fetch execution details',
+            error: error.message
+        });
+    }
+};
+
 // Function to receive and start execution
 exports.getProblem = async (req, res) => {
     const sessionId = req.body.sessionId;
@@ -36,7 +63,8 @@ exports.getProblem = async (req, res) => {
             status: 'pending',
             result: null,
             metaData: {},
-            inputData: {}
+            inputData: {},
+            startTime: new Date() // Set the start time when the execution is created
         });
 
         console.log('Execution created with ID:', newExecution.id);
@@ -63,6 +91,7 @@ exports.getProblem = async (req, res) => {
         });
         console.log('Execution created with ID:', newExecution.id);
 
+        // Start consuming messages from RabbitMQ queue related to this execution
         consumeMessagesFromQueue(newExecution.id);
 
         // Send a message to the RabbitMQ queue after the execution is created
@@ -83,6 +112,7 @@ exports.getProblem = async (req, res) => {
         return res.status(500).json({ message: 'Internal server error. Unable to start the problem execution.' });
     }
 };
+
 
 // Function to fetch the current status of an execution
 exports.getExecutionStatus = async (req, res) => {
@@ -118,22 +148,22 @@ exports.deleteProblem = async (req, res) => {
             return res.status(404).json({ message: 'Problem not found.' });
         }
 
-        const execution = await models.Execution.findOne({ where: { problemId } });
-
-        if (execution && execution.status === 'pending') {
-            // Update the execution status to cancelled
-            await execution.update({
-                status: 'cancelled',
-                result: 'Execution was cancelled by the user.'
-            });
-
-            // Publish a cancellation message to RabbitMQ
-            const cancellationMessage = {
-                action: 'execution_cancelled',
-                executionId: execution.id,
-                message: `Execution for problem ID ${problemId} has been cancelled.`
-            };
-        }
+        // const execution = await models.Execution.findOne({ where: { problemId } });
+        //
+        // if (execution && execution.status === 'pending') {
+        //     // Update the execution status to cancelled
+        //     await execution.update({
+        //         status: 'cancelled',
+        //         result: 'Execution was cancelled by the user.'
+        //     });
+        //
+        //     // Publish a cancellation message to RabbitMQ
+        //     const cancellationMessage = {
+        //         action: 'execution_cancelled',
+        //         executionId: execution.id,
+        //         message: `Execution for problem ID ${problemId} has been cancelled.`
+        //     };
+        // }
 
         await problem.destroy();
 

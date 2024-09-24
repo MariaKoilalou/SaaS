@@ -59,12 +59,25 @@ function consumeMessagesFromQueue(executionId) {
                             };
                         }
 
+                        // If the execution is completed, update the endTime and executionTime
+                        if (status === 'completed' || status === 'failed') {
+                            const endTime = new Date();
+                            execution.endTime = endTime;
+
+                            // Calculate the execution time in seconds
+                            if (execution.startTime) {
+                                const executionTime = (endTime - new Date(execution.startTime)) / 1000; // Convert to seconds
+                                execution.executionTime = executionTime;
+                                console.log(`Execution ${executionId} completed in ${executionTime} seconds.`);
+                            }
+                        }
+
                         // Save updated execution to the database
                         await execution.save();
                         console.log(`Execution ${executionId} updated with status: ${status}`);
 
                         // Publish the updated execution to the frontend queue using the publisher
-                        const update = { status, progress, result, metaData };
+                        const update = { status, progress, result, metaData, executionTime: execution.executionTime, endTime: execution.endTime };
                         sendExecutionUpdateToQueue(executionId, update);  // Call the publisher here
 
                         // Acknowledge the message after processing

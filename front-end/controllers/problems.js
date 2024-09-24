@@ -1,9 +1,42 @@
 const axios = require('axios');
-const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
-const initModels = require("../models/init-models");
-const models = initModels(sequelize);
-const session = require('express-session');
-const SequelizeStore = require('connect-session-sequelize')(session.Store);
+
+exports.getStats = async (req, res) => {
+    try {
+        // Extract sessionId from request (assuming it's in the session or cookies)
+        const sessionId = req.sessionID;
+
+        if (!sessionId) {
+            return res.status(400).json({
+                message: 'Session ID is missing'
+            });
+        }
+
+        // Log sessionId for debugging
+        console.log('Session ID:', sessionId);
+
+        // Send sessionId to Browse Problem service
+        const response = await axios.post('http://browse_problem_service:4003/stats', {
+            sessionId
+        });
+
+        // Assuming the stats are returned in response.data
+        const problemStats = response.data;
+
+        // Log the received stats for debugging
+        console.log('Received Problem Statistics:', problemStats);
+
+        res.render('statistics.ejs', { stats: problemStats });
+
+    } catch (error) {
+        console.error('Error fetching problem statistics:', error);
+        res.status(500).render('error', {
+            message: 'Failed to fetch problem statistics from Browse Problem Service',
+            error: error.message
+        });
+    }
+};
+
+
 
 exports.showManageProblem = (req, res) => {
     const { executionId, status, progress, result, metaData } = req.body;

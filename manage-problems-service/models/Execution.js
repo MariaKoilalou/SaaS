@@ -30,6 +30,22 @@ module.exports = (sequelize, DataTypes) => {
         inputData: {
             type: DataTypes.JSON,
             allowNull: true
+        },
+        // New fields for execution time tracking
+        startTime: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null
+        },
+        endTime: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: null
+        },
+        executionTime: {
+            type: DataTypes.FLOAT, // in seconds or milliseconds
+            allowNull: true,
+            defaultValue: null
         }
     }, {
         sequelize,

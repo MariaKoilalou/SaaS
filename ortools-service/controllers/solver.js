@@ -26,20 +26,20 @@ exports.solver = async (req, res) => {
             executionId
         });
 
-        // Execute solver in background
-        const scriptPath = resolve(__dirname, 'vrpSolver.py');
-        const solverProcess = spawn('python3', [scriptPath, locationFile, numVehicles, depot, maxDistance]);
-
-        // Send initial progress update via RabbitMQ
+        // Send initial metadata and execution info to the queue
         sendMessageToQueue({
             action: 'solver_started',
             sessionId,
             problemType,
-            meta: { numVehicles, depot, maxDistance },
+            meta: { numVehicles, depot, maxDistance },  // Sending metadata here
             status: "started",
             message: 'Solver execution has started',
             progress: 0
         }, `execution_updates_${executionId}`);
+
+        // Execute solver in the background
+        const scriptPath = resolve(__dirname, 'vrpSolver.py');
+        const solverProcess = spawn('python3', [scriptPath, locationFile, numVehicles, depot, maxDistance]);
 
         // Process real-time output from the solver
         solverProcess.stdout.on('data', (data) => {
@@ -50,15 +50,19 @@ exports.solver = async (req, res) => {
                 const progressUpdate = JSON.parse(output);
                 const progress = progressUpdate.progress || 0;
 
-                // Send progress update via RabbitMQ
+                // Check if the message contains the final result
+                const result = progressUpdate.result || null;
+
+                // Send progress or final result update via RabbitMQ
                 sendMessageToQueue({
-                    action: 'solver_progress',
+                    action: result ? 'solver_completed' : 'solver_progress',  // Set action based on result
                     sessionId,
                     problemType,
                     progress,
-                    status: "in-progress",
-                    partialResult: progressUpdate.partialResult || null,
-                    message: progressUpdate.finalResult || 'Solver progress update'
+                    status: result ? "completed" : "in-progress",
+                    result,  // Include the final result when available
+                    metaData: progressUpdate.metaData || null,  // Include metadata if available
+                    message: result ? 'Solver execution completed' : 'Solver progress update'
                 }, `execution_updates_${executionId}`);
 
             } catch (parseError) {

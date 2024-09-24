@@ -106,7 +106,7 @@ def main():
         max_route_distance = print_solution(data, manager, routing, solution)
         print(json.dumps({
             "progress": 100,
-            "finalResult": f"Maximum route distance: {max_route_distance}m"
+            "result": f"Maximum route distance: {max_route_distance}m"
         }), flush=True)
     else:
         print(json.dumps({"error": "No solution found"}), flush=True)

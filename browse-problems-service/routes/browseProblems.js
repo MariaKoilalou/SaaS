@@ -8,10 +8,10 @@ router.post('/show', browseProblemsController.show);
 
 router.post('/problem', browseProblemsController.getProblem);
 
-router.post('/update/:problemId', browseProblemsController.updateProblem);
+// router.post('/update/:problemId', browseProblemsController.updateProblem);
 
 router.post('/delete/:problemId', browseProblemsController.deleteProblem);
 
-router.get('/status', browseProblemsController.getStatus);
+router.post('/status', browseProblemsController.getStatus);
 
 module.exports = router;

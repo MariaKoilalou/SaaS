@@ -2,10 +2,64 @@ const axios = require('axios');
 const sequelize = require('../utils/database'); // Assuming this exports a configured Sequelize instance
 const initModels = require("../models/init-models");
 const models = initModels(sequelize);
-const session = require('express-session');
-const SequelizeStore = require('connect-session-sequelize')(session.Store);
 
 const PROBLEMS_PER_PAGE = 7;
+
+exports.sendProblemsStats = async (req, res) => {
+    try {
+
+        const sessionId = req.sessionID;
+
+        if (!sessionId) {
+            return res.status(400).json({
+                message: 'Session ID is missing'
+            });
+        }
+
+        // Fetch problem IDs belonging to the specific sessionId from the database
+        const problems = await models.Problem.findAll({
+            where: { sessionId }, // Assuming there’s a sessionId column in the Problem model
+            attributes: ['id']
+        });
+
+        const problemIds = problems.map(problem => problem.id);
+
+        // Log the problem IDs to confirm
+        console.log('Filtered Problem IDs for session:', sessionId, problemIds);
+
+        if (!problemIds || problemIds.length === 0) {
+            return res.status(404).json({
+                message: 'No problems found for the given session ID'
+            });
+        }
+
+        // Send the problem IDs to the problem stats service
+        const response = await axios.post('http://problem_stats_service:4006/problems', {
+            problemIds
+        });
+
+        // Assuming the response from the stats service contains useful statistics
+        const statsResponse = response.data;
+
+        // Log the stats response to confirm it was received correctly
+        console.log('Stats Service Response:', statsResponse);
+
+        // Send a success message along with the stats response back to the client
+        res.status(200).json({
+            message: 'Problem statistics successfully retrieved',
+            stats: statsResponse // The response data from the stats service
+        });
+
+    } catch (error) {
+        console.error('Error fetching problems or sending to stats service:', error);
+        res.status(500).json({
+            message: 'Failed to fetch problem IDs or send them to the stats service',
+            error: error.message
+        });
+    }
+};
+
+
 
 exports.show = async (req, res) => {
     const sessionId = req.body.sessionId;
@@ -86,33 +140,33 @@ exports.show = async (req, res) => {
     }
 };
 
-exports.updateProblem = async (req, res) => {
-    // const { status, progress, result } = req.body;
-    const problemId = req.params.problemId; // Extract problemId from URL parameters
-
-    try {
-        // Find the problem in the database
-        const problem = await models.Problem.findOne({ where: { id: problemId } });
-
-        if (!problem) {
-            return res.status(404).json({ message: 'Problem not found.' });
-        }
-
-        // Update the problem's status, progress, and result in the database
-        // await problem.update({
-        //     status: status,
-        //     progress: progress || null,
-        //     result: result || null
-        // });
-
-        console.log(`Problem ${problemId} updated successfully`);
-        return res.status(200).json({ message: `Problem ${problemId} updated successfully.` });
-
-    } catch (error) {
-        console.error(`Error updating problem ${problemId}:`, error.message);
-        return res.status(500).json({ message: 'Internal server error. Unable to update the problem.' });
-    }
-};
+// exports.updateProblem = async (req, res) => {
+//     // const { status, progress, result } = req.body;
+//     const problemId = req.params.problemId; // Extract problemId from URL parameters
+//
+//     try {
+//         // Find the problem in the database
+//         const problem = await models.Problem.findOne({ where: { id: problemId } });
+//
+//         if (!problem) {
+//             return res.status(404).json({ message: 'Problem not found.' });
+//         }
+//
+//         // Update the problem's status, progress, and result in the database
+//         // await problem.update({
+//         //     status: status,
+//         //     progress: progress || null,
+//         //     result: result || null
+//         // });
+//
+//         console.log(`Problem ${problemId} updated successfully`);
+//         return res.status(200).json({ message: `Problem ${problemId} updated successfully.` });
+//
+//     } catch (error) {
+//         console.error(`Error updating problem ${problemId}:`, error.message);
+//         return res.status(500).json({ message: 'Internal server error. Unable to update the problem.' });
+//     }
+// };
 
 
 exports.getProblem = async (req, res) => {
