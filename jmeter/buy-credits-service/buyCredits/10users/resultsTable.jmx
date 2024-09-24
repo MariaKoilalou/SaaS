@@ -1,0 +1,11 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1727217189052,32,HTTP Request,200,OK,Thread Group 1-1,text,true,,312,275,1,1,http://localhost:4002/buy,32,0,1
+1727217190053,23,HTTP Request,200,OK,Thread Group 1-2,text,true,,312,275,1,1,http://localhost:4002/buy,23,0,2
+1727217191058,38,HTTP Request,200,OK,Thread Group 1-3,text,true,,312,275,1,1,http://localhost:4002/buy,38,0,1
+1727217192053,34,HTTP Request,200,OK,Thread Group 1-4,text,true,,312,275,1,1,http://localhost:4002/buy,34,0,1
+1727217193053,51,HTTP Request,200,OK,Thread Group 1-5,text,true,,312,275,1,1,http://localhost:4002/buy,51,0,1
+1727217194055,32,HTTP Request,200,OK,Thread Group 1-6,text,true,,312,275,1,1,http://localhost:4002/buy,32,0,1
+1727217195055,16,HTTP Request,200,OK,Thread Group 1-7,text,true,,312,275,1,1,http://localhost:4002/buy,16,0,1
+1727217196054,21,HTTP Request,200,OK,Thread Group 1-8,text,true,,312,275,1,1,http://localhost:4002/buy,21,0,0
+1727217197054,33,HTTP Request,200,OK,Thread Group 1-9,text,true,,312,275,1,1,http://localhost:4002/buy,33,0,0
+1727217198058,29,HTTP Request,200,OK,Thread Group 1-10,text,true,,312,275,1,1,http://localhost:4002/buy,29,0,1

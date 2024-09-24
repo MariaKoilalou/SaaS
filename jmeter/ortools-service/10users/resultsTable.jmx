@@ -1,0 +1,11 @@
+timeStamp,elapsed,label,responseCode,responseMessage,threadName,dataType,success,failureMessage,bytes,sentBytes,grpThreads,allThreads,URL,Latency,IdleTime,Connect
+1727218722181,84,HTTP Request,200,OK,Thread Group 1-1,text,true,,323,419,1,1,http://localhost:4008/solver,84,0,0
+1727218723185,9,HTTP Request,200,OK,Thread Group 1-2,text,true,,323,419,1,1,http://localhost:4008/solver,9,0,0
+1727218724182,16,HTTP Request,200,OK,Thread Group 1-3,text,true,,323,419,1,1,http://localhost:4008/solver,16,0,0
+1727218725183,11,HTTP Request,200,OK,Thread Group 1-4,text,true,,323,419,1,1,http://localhost:4008/solver,11,0,1
+1727218726183,38,HTTP Request,200,OK,Thread Group 1-5,text,true,,323,419,1,1,http://localhost:4008/solver,38,0,0
+1727218727186,24,HTTP Request,200,OK,Thread Group 1-6,text,true,,323,419,1,1,http://localhost:4008/solver,24,0,0
+1727218728182,29,HTTP Request,200,OK,Thread Group 1-7,text,true,,323,419,1,1,http://localhost:4008/solver,29,0,9
+1727218729182,15,HTTP Request,200,OK,Thread Group 1-8,text,true,,323,419,1,1,http://localhost:4008/solver,15,0,1
+1727218730182,36,HTTP Request,200,OK,Thread Group 1-9,text,true,,323,419,1,1,http://localhost:4008/solver,36,0,0
+1727218731183,15,HTTP Request,200,OK,Thread Group 1-10,text,true,,323,419,1,1,http://localhost:4008/solver,15,0,1
