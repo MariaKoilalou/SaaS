@@ -36,20 +36,33 @@ exports.getStats = async (req, res) => {
     }
 };
 
+exports.updateManageProblem = (req, res) => {
+    const { executionId } = req.params;
+    const { status, progress, result, metaData } = req.body;
+
+    console.log('Received update for: ', executionId);
+
+    // Here you can update the data in your database
+
+    // Redirect with query parameters
+    res.redirect(`/manage/${executionId}?status=${status}&progress=${progress}&result=${result}&metaData=${metaData}`);
+};
 
 
 exports.showManageProblem = (req, res) => {
-    const { executionId, status, progress, result, metaData } = req.body;
+    const { executionId } = req.params;
+    const { status, progress, result, metaData } = req.query;
 
-    // Render the manage problem page, passing the execution data to the EJS template
+    // Handle the received data and render the page
     res.render('manageProblem.ejs', {
-        executionId: executionId,
-        status: status ? status : 'Pending',
-        progress: progress ? progress.progress : 0,
-        result: result ? result.result : 'Not available',
-        metaData: metaData ? metaData.metaData : 'No metadata'
+        executionId,
+        status,
+        progress,
+        result,
+        metaData
     });
 };
+
 
 exports.renderSubmitProblemForm = (req, res) => {
     console.log('Rendering form - session balance:', req.session.balance);
