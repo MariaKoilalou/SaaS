@@ -2,6 +2,10 @@ const http = require('http'); // Import the HTTP module
 const app = require('./app'); // Import the Express app
 const sequelize = require("./utils/database");
 const initModels = require("./models/init-models");
+const { consumeExecutionUpdates } = require('./utils/rabbitmq/consumer');
+
+// Start consuming execution updates from RabbitMQ
+consumeExecutionUpdates();
 
 // Initialize models
 const models = initModels(sequelize);
@@ -17,7 +21,7 @@ sequelize
     .then(() => {
         sequelize
             .sync({
-                force: false, // Set this to `true` only for development, not in production
+                force: true, // Set this to `true` only for development, not in production
             })
             .then((result) => {
                 // Start the HTTP server on the specified port
@@ -28,3 +32,4 @@ sequelize
             .catch((err) => console.log('Error syncing Sequelize:', err));
     })
     .catch((err) => console.log('Error creating schema:', err));
+

@@ -2,10 +2,11 @@ const http = require('http'); // Import the HTTP module
 const app = require('./app'); // Import the Express app
 const sequelize = require("./utils/database");
 const initModels = require("./models/init-models");
-const { consumeMessages } = require('./utils/rabbitmq/consumer'); // Import RabbitMQ consumer logic
+const { consumeMessagesFromQueue } = require('./utils/rabbitmq/consumer'); // Import RabbitMQ consumer logic
 const { sendMessageToQueue } = require('./utils/rabbitmq/publisher'); // Import RabbitMQ publisher logic
 
-// Initialize models
+consumeMessagesFromQueue();
+
 const models = initModels(sequelize);
 
 const port = process.env.PORT || 4004;

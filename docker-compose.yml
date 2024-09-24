@@ -71,7 +71,10 @@ services:
     ports:
       - "4007:4007"
     depends_on:
-      - front_end_db
+      rabbitmq:
+        condition: service_healthy
+      front_end_db:
+        condition: service_started
     environment:
       - DB_HOST=front_end_db
       - DB_PORT=5432

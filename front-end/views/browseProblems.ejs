@@ -66,7 +66,6 @@
             <thead>
             <tr>
                 <th>Created On</th>
-                <th>Status</th>
                 <th>Actions</th>
             </tr>
             </thead>
@@ -74,7 +73,6 @@
             <% problems.forEach(problem => { %>
                 <tr data-problem-id="<%= problem.id %>">
                     <td><%= problem.dateCreated %></td>
-<!--                    <td class="status-column"> <%= problem.status %> </td>-->
                     <td class="problem-actions">
                         <a href="/problems/manage/<%= problem.id %>" class="btn btn-sm btn-primary">View/Edit</a>
 <!--                        <% if (problem.status === 'executed') { %>-->

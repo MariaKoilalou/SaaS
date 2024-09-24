@@ -1,6 +1,6 @@
-const {sendMessageToQueue} = require("../utils/rabbitmq/publisher");
+const { sendMessageToQueue } = require("../utils/rabbitmq/publisher");
 const { spawn } = require('child_process');
-const {resolve} = require("path");
+const { resolve } = require("path");
 
 exports.solver = async (req, res) => {
     try {
@@ -36,11 +36,12 @@ exports.solver = async (req, res) => {
             sessionId,
             problemType,
             meta: { numVehicles, depot, maxDistance },
+            status: "started",
             message: 'Solver execution has started',
             progress: 0
         }, `execution_updates_${executionId}`);
 
-        // Process output from the solver
+        // Process real-time output from the solver
         solverProcess.stdout.on('data', (data) => {
             const output = data.toString();
             console.log('VRP Solver Output:', output);
@@ -55,8 +56,9 @@ exports.solver = async (req, res) => {
                     sessionId,
                     problemType,
                     progress,
+                    status: "in-progress",
                     partialResult: progressUpdate.partialResult || null,
-                    message: 'Solver progress update'
+                    message: progressUpdate.finalResult || 'Solver progress update'
                 }, `execution_updates_${executionId}`);
 
             } catch (parseError) {
@@ -65,6 +67,7 @@ exports.solver = async (req, res) => {
                     action: 'solver_progress_raw',
                     sessionId,
                     problemType,
+                    status: "raw",
                     rawOutput: output,
                     message: 'Solver raw output received'
                 }, `execution_updates_${executionId}`);
@@ -78,6 +81,7 @@ exports.solver = async (req, res) => {
                     action: 'solver_completed',
                     sessionId,
                     problemType,
+                    status: "completed",
                     message: 'Solver execution completed successfully',
                     progress: 100
                 }, `execution_updates_${executionId}`);
@@ -86,6 +90,7 @@ exports.solver = async (req, res) => {
                     action: 'solver_failed',
                     sessionId,
                     problemType,
+                    status: "failed",
                     message: 'Solver process failed',
                     error: `Solver process exited with non-zero code: ${code}`
                 }, `execution_updates_${executionId}`);

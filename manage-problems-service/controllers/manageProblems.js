@@ -2,9 +2,10 @@ const axios = require('axios');
 const sequelize = require('../utils/database');
 const initModels = require("../models/init-models");
 const models = initModels(sequelize);
-const { sendMessageToQueue } = require('../utils/rabbitmq/publisher');
-const { consumeMessagesFromQueue } = require('../utils/rabbitmq/consumer'); // RabbitMQ consumer
+const { sendExecutionUpdateToQueue } = require('../utils/rabbitmq/publisher');
+const { consumeMessagesFromQueue } = require('../utils/rabbitmq/consumer');  // RabbitMQ consumer
 
+// Function to receive and start execution
 exports.getProblem = async (req, res) => {
     const sessionId = req.body.sessionId;
     const newBalance = req.body.newBalance;
@@ -12,7 +13,6 @@ exports.getProblem = async (req, res) => {
     const problemDetails = req.body;
 
     try {
-
         let sessionData = await models.Session.findOne({ where: { sid: sessionId } });
 
         if (!sessionData) {
@@ -59,65 +59,28 @@ exports.getProblem = async (req, res) => {
             sessionId,
             problemType,
             problemDetails,
-            executionId: newExecution.id // Pass executionId to OR-Tools
+            executionId: newExecution.id  // Pass executionId to OR-Tools
         });
+        console.log('Execution created with ID:', newExecution.id);
+
+        consumeMessagesFromQueue(newExecution.id);
+
+        // Send a message to the RabbitMQ queue after the execution is created
+        const executionUpdate = {
+            action: 'execution_started',
+            executionId: newExecution.id,
+            sessionId,
+            status: 'pending',
+            progress: 0,
+            message: 'Execution has started.'
+        };
+
+        // Publish the message to RabbitMQ
+        sendExecutionUpdateToQueue('frontend_updates_queue', executionUpdate);
 
     } catch (error) {
         console.error('Error in Manage Problem Service:', error.message);
-        console.error('Full error:', error);
         return res.status(500).json({ message: 'Internal server error. Unable to start the problem execution.' });
-    }
-};
-
-
-// Function to update the execution metadata and input data
-exports.updateExecution = async (req, res) => {
-    const { executionId } = req.params;
-    const { newMeta, newInput } = req.body;
-
-    try {
-        const execution = await models.Execution.findByPk(executionId);
-
-        if (!execution) {
-            return res.status(404).json({ message: 'Execution not found.' });
-        }
-
-        // Update metadata and input data if provided
-        if (newMeta) {
-            execution.metaData = {
-                ...execution.metaData,
-                ...newMeta
-            };
-        }
-        if (newInput) {
-            execution.inputData = {
-                ...execution.inputData,
-                ...newInput
-            };
-        }
-
-        await execution.save();
-
-        // Publish an update message to RabbitMQ
-        const updateMessage = {
-            action: 'execution_updated',
-            executionId: execution.id,
-            metaData: execution.metaData,
-            inputData: execution.inputData,
-            message: `Execution ${execution.id} has been updated.`
-        };
-        sendMessageToQueue(updateMessage);  // Notify RabbitMQ
-
-        return res.status(200).json({
-            message: 'Execution updated successfully',
-            executionId: execution.id,
-            metaData: execution.metaData,
-            inputData: execution.inputData
-        });
-
-    } catch (error) {
-        console.error('Error updating execution:', error.message);
-        return res.status(500).json({ message: 'Internal server error. Unable to update execution.' });
     }
 };
 
@@ -142,6 +105,7 @@ exports.getExecutionStatus = async (req, res) => {
         res.status(500).json({ message: 'Error fetching execution status', error: error.message });
     }
 };
+
 
 // Function to delete a problem and cancel the related execution
 exports.deleteProblem = async (req, res) => {
@@ -169,7 +133,6 @@ exports.deleteProblem = async (req, res) => {
                 executionId: execution.id,
                 message: `Execution for problem ID ${problemId} has been cancelled.`
             };
-            sendMessageToQueue(cancellationMessage);  // Notify RabbitMQ
         }
 
         await problem.destroy();

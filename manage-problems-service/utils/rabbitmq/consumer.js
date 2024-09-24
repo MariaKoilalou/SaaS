@@ -1,21 +1,19 @@
 const amqp = require('amqplib/callback_api');
-const axios = require('axios'); // To send HTTP requests to Browse Problems Service and Frontend Service
 const sequelize = require('../database');
 const initModels = require("../../models/init-models");
 const models = initModels(sequelize);
+const { sendExecutionUpdateToQueue } = require('./publisher');  // Import the publisher
 
 const RABBITMQ_URL = 'amqp://myuser:mypassword@rabbitmq:5672';
-const BROWSE_PROBLEMS_SERVICE_URL = 'http://browse_problems_service:4003/update'; // Base URL for Browse Problems Service
-const FRONTEND_SERVICE_URL = 'http://frontend_service:4007/execution/update'; // URL for updating the frontend
 
-function consumeMessagesFromQueue(problemId, executionId) {
-    const queue = `execution_updates_${executionId}`; // Dynamic queue based on execution ID
+function consumeMessagesFromQueue(executionId) {
+    const queue = `execution_updates_${executionId}`;
 
     amqp.connect(RABBITMQ_URL, (err, connection) => {
         if (err) {
             console.error('Failed to connect to RabbitMQ:', err);
             console.log('Retrying connection in 5 seconds...');
-            return setTimeout(() => consumeMessagesFromQueue(problemId, executionId), 5000); // Retry after 5 seconds
+            return setTimeout(() => consumeMessagesFromQueue(executionId), 5000); // Retry after 5 seconds
         }
 
         connection.createChannel((err, channel) => {
@@ -40,38 +38,36 @@ function consumeMessagesFromQueue(problemId, executionId) {
                     const { status, progress, result, metaData } = message;
 
                     try {
-                        // Update the execution status, progress, and result in the Manage Problem Service database
-                        await models.Execution.update({
-                            status,
-                            progress: progress || null,
-                            result: result || null,
-                            metaData: metaData || null
-                        }, {
-                            where: { id: executionId }
-                        });
+                        // Fetch existing execution entry
+                        const execution = await models.Execution.findByPk(executionId);
 
+                        if (!execution) {
+                            console.error(`Execution with ID ${executionId} not found`);
+                            return;
+                        }
+
+                        // Update execution fields with partial data
+                        if (status) execution.status = status;
+                        if (progress) execution.progress = progress;
+                        if (result) execution.result = result;
+
+                        // Merge new metaData with existing metaData
+                        if (metaData) {
+                            execution.metaData = {
+                                ...execution.metaData,
+                                ...metaData
+                            };
+                        }
+
+                        // Save updated execution to the database
+                        await execution.save();
                         console.log(`Execution ${executionId} updated with status: ${status}`);
 
-                        // 1. Inform Browse Problems Service about the update
-                        const browseProblemsUpdateUrl = `${BROWSE_PROBLEMS_SERVICE_URL}/${problemId}`;
-                        await axios.post(browseProblemsUpdateUrl, {
-                            status: status,
-                            progress: progress,
-                            result: result
-                        });
-                        console.log(`Problem ${problemId} status updated in Browse Problems Service.`);
+                        // Publish the updated execution to the frontend queue using the publisher
+                        const update = { status, progress, result, metaData };
+                        sendExecutionUpdateToQueue(executionId, update);  // Call the publisher here
 
-                        // 2. Inform Frontend Service about the update
-                        await axios.post(FRONTEND_SERVICE_URL, {
-                            executionId,
-                            status,
-                            progress,
-                            result,
-                            metaData
-                        });
-                        console.log(`Execution ${executionId} status updated in Frontend Service.`);
-
-                        // Acknowledge the message after it's processed
+                        // Acknowledge the message after processing
                         channel.ack(msg);
                     } catch (updateError) {
                         console.error(`Failed to update execution ${executionId}:`, updateError);
