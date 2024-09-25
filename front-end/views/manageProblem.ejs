@@ -84,19 +84,19 @@
             </tr>
             <tr>
                 <td>Status</td>
-                <td id="execution-status"><%= status %></td>
+                <td id="execution-status"><%= status || 'Pending' %></td>
             </tr>
             <tr>
                 <td>Progress</td>
-                <td id="execution-progress"><%= progress %> %</td>
+                <td id="execution-progress"><%= progress || 0 %> %</td>
             </tr>
             <tr>
                 <td>Result</td>
-                <td id="execution-result"><%= result || 'Not available' %></td>
+                <td id="execution-result"><%= result ? result : 'Not available' %></td>
             </tr>
             <tr>
                 <td>MetaData</td>
-                <td id="execution-metadata"><%= metaData || 'No metadata' %></td>
+                <td id="execution-metadata"><%= metaData ? JSON.stringify(metaData) : 'No metadata' %></td>
             </tr>
             </tbody>
         </table>
@@ -112,20 +112,11 @@
         </div>
 
         <div class="progress">
-            <div class="progress-bar bg-success" role="progressbar" id="progress-bar" aria-valuenow="<%= progress %>" aria-valuemin="0" aria-valuemax="100" style="width: <%= progress %>%">
-                <%= progress %>%
+            <div class="progress-bar bg-success" role="progressbar" id="progress-bar"
+                 aria-valuenow="<%= progress || 0 %>" aria-valuemin="0" aria-valuemax="100"
+                 style="width: <%= progress || 0 %>%">
+                <%= progress || 0 %>%
             </div>
-        </div>
-
-        <!-- Updates -->
-        <div id="executionUpdates" class="mt-3">
-            <h5>Execution Updates</h5>
-            <ul id="updates-list">
-                <li>Execution Status: <%= status %></li>
-                <li>Progress: <%= progress %>%</li>
-                <li>Result: <%= result || 'Not available' %></li>
-                <li>MetaData: <%= metaData || 'No metadata' %></li>
-            </ul>
         </div>
     </div>
 </div>

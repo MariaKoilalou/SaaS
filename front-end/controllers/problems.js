@@ -1,5 +1,6 @@
 const axios = require('axios');
 
+
 exports.getStats = async (req, res) => {
     try {
         // Extract sessionId from request (assuming it's in the session or cookies)
@@ -15,7 +16,7 @@ exports.getStats = async (req, res) => {
         console.log('Session ID:', sessionId);
 
         // Send sessionId to Browse Problem service
-        const response = await axios.post('http://browse_problem_service:4003/stats', {
+        const response = await axios.post('http://browse_problems_service:4003/stats', {
             sessionId
         });
 
@@ -25,14 +26,12 @@ exports.getStats = async (req, res) => {
         // Log the received stats for debugging
         console.log('Received Problem Statistics:', problemStats);
 
-        res.render('statistics.ejs', { stats: problemStats });
+        res.render('Statistics.ejs', {
+            stats: problemStats
+        });
 
     } catch (error) {
         console.error('Error fetching problem statistics:', error);
-        res.status(500).render('error', {
-            message: 'Failed to fetch problem statistics from Browse Problem Service',
-            error: error.message
-        });
     }
 };
 
@@ -45,15 +44,20 @@ exports.updateManageProblem = (req, res) => {
     // Here you can update the data in your database
 
     // Redirect with query parameters
-    res.redirect(`/manage/${executionId}?status=${status}&progress=${progress}&result=${result}&metaData=${metaData}`);
+    res.redirect(`manage/${executionId}?status=${status}&progress=${progress}&result=${result}&metaData=${metaData}`);
 };
 
 
 exports.showManageProblem = (req, res) => {
     const { executionId } = req.params;
-    const { status, progress, result, metaData } = req.query;
 
-    // Handle the received data and render the page
+    // Provide default values if status, progress, result, or metaData are not present in the query
+    const status = req.query.status || 'pending'; // Default status to 'pending'
+    const progress = req.query.progress || 0; // Default progress to 0%
+    const result = req.query.result || null; // Default result to null (no result yet)
+    const metaData = req.query.metaData || {}; // Default metaData to an empty object
+
+    // Handle the received data and render the page with default or actual values
     res.render('manageProblem.ejs', {
         executionId,
         status,
@@ -62,6 +66,7 @@ exports.showManageProblem = (req, res) => {
         metaData
     });
 };
+
 
 
 exports.renderSubmitProblemForm = (req, res) => {
@@ -138,7 +143,7 @@ exports.handleSubmitProblem = async (req, res) => {
             await req.session.save();  // Save updated balance in session
 
             // Redirect to manage page with the executionId
-            return res.redirect(`manage/${executionId}`);  // Pass the executionId to the manage page
+            return res.redirect(`update/manage/${executionId}`);  // Pass the executionId to the manage page
         }
     } catch (error) {
         console.error('Error submitting problem:', error.message);

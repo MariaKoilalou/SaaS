@@ -37,7 +37,7 @@ function consumeExecutionUpdates() {
 
                     try {
                         // Send an HTTP request to update the page data
-                        await axios.post(`http://front_end_service:4007/update/${executionId}`, {
+                        await axios.post(`http://front_end_service:4007/problems/update/${executionId}`, {
                             status,
                             progress,
                             result,

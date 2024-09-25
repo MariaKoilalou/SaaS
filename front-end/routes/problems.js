@@ -13,7 +13,7 @@ router.get('/status', problemsController.getProblemStatus);
 
 router.get('/stats', problemsController.getStats);
 
-router.get('/manage/:executionId', problemsController.showManageProblem);
+router.get('/update/manage/:executionId', problemsController.showManageProblem);
 
 router.post('/update/:executionId', problemsController.updateManageProblem);
 
