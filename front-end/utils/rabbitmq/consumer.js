@@ -30,24 +30,17 @@ function consumeExecutionUpdates() {
                 if (msg !== null) {
                     const content = msg.content.toString();
                     const message = JSON.parse(content);
-
                     console.log(`Received execution update: ${content}`);
 
                     const { executionId, status, progress, result, metaData } = message;
 
-                    try {
-                        // Send an HTTP request to update the page data
-                        await axios.post(`http://front_end_service:4007/problems/update/${executionId}`, {
-                            status,
-                            progress,
-                            result,
-                            metaData
-                        });
-                        console.log(`Update sent for executionId: ${executionId}`);
-                    } catch (error) {
-                        console.error(`Failed to update page for executionId: ${executionId}`, error);
-                    }
-
+                    // Update the in-memory store with execution details
+                    executionUpdates[executionId] = {
+                        status,
+                        progress,
+                        result,
+                        metaData
+                    };
 
                     channel.ack(msg);
                 }

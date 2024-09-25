@@ -184,9 +184,7 @@ services:
     ports:
       - "4006:4006"
     environment:
-      - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
-      - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
-      - JWT_SECRET=supersecretjwtkey12345
+      - BASE_URL=problem_stats_service
     networks:
       - my_network
     restart: always

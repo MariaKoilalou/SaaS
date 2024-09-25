@@ -1,10 +1,12 @@
 const axios = require('axios');
-
+const { executionUpdates } = require('../utils/rabbitmq/consumer'); // Import the executionUpdates store
 
 exports.getStats = async (req, res) => {
     try {
+        const url = `http://browse_problems_service:4003/stats`;
+
         // Extract sessionId from request (assuming it's in the session or cookies)
-        const sessionId = req.sessionID;
+        const sessionId = req.session.id;
 
         if (!sessionId) {
             return res.status(400).json({
@@ -15,10 +17,12 @@ exports.getStats = async (req, res) => {
         // Log sessionId for debugging
         console.log('Session ID:', sessionId);
 
-        // Send sessionId to Browse Problem service
-        const response = await axios.post('http://browse_problems_service:4003/stats', {
-            sessionId
+        const response = await axios.post(url, {
+            sessionId: req.session.id,
         });
+
+        console.log('Received stats:', response.data.problems);
+
 
         // Assuming the stats are returned in response.data
         const problemStats = response.data;
@@ -35,37 +39,38 @@ exports.getStats = async (req, res) => {
     }
 };
 
-exports.updateManageProblem = (req, res) => {
-    const { executionId } = req.params;
-    const { status, progress, result, metaData } = req.body;
+exports.updateExecution = (req, res) => {
+    const { executionId, status, progress, result, metaData } = req.body;
 
-    console.log('Received update for: ', executionId);
-
-    // Here you can update the data in your database
-
-    // Redirect with query parameters
-    res.redirect(`manage/${executionId}?status=${status}&progress=${progress}&result=${result}&metaData=${metaData}`);
-};
-
-
-exports.showManageProblem = (req, res) => {
-    const { executionId } = req.params;
-
-    // Provide default values if status, progress, result, or metaData are not present in the query
-    const status = req.query.status || 'pending'; // Default status to 'pending'
-    const progress = req.query.progress || 0; // Default progress to 0%
-    const result = req.query.result || null; // Default result to null (no result yet)
-    const metaData = req.query.metaData || {}; // Default metaData to an empty object
-
-    // Handle the received data and render the page with default or actual values
-    res.render('manageProblem.ejs', {
-        executionId,
+    // Store the execution update in memory
+    executionUpdates[executionId] = {
         status,
         progress,
         result,
         metaData
+    };
+
+    console.log(`Execution update received for ID: ${executionId}`);
+
+    return res.status(200).json({ message: 'Execution update stored successfully.' });
+};
+
+exports.showManageProblem = (req, res) => {
+    const { executionId } = req.params;
+
+    // Get the latest execution update for the given executionId from the in-memory store
+    const executionData = executionUpdates[executionId];
+
+    // Render the manage problem page, passing the execution data to the EJS template
+    res.render('manageProblem.ejs', {
+        executionId: executionId,
+        status: executionData ? executionData.status : 'Pending',
+        progress: executionData ? executionData.progress : 0,
+        result: executionData ? executionData.result : 'Not available',
+        metaData: executionData ? executionData.metaData : 'No metadata'
     });
 };
+
 
 
 

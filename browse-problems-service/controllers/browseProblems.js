@@ -7,15 +7,15 @@ const PROBLEMS_PER_PAGE = 7;
 
 exports.sendProblemsStats = async (req, res) => {
     try {
-
-        const sessionId = req.sessionID;
+        const sessionId = req.body.sessionId;
+        const url = `http://problem_stats_service:4006/problems`;
+        console.log('Received from browse problems service for id:', sessionId);
 
         if (!sessionId) {
             return res.status(400).json({
                 message: 'Session ID is missing'
             });
         }
-
         // Fetch problem IDs belonging to the specific sessionId from the database
         const problems = await models.Problem.findAll({
             where: { sessionId }, // Assuming there’s a sessionId column in the Problem model
@@ -34,9 +34,7 @@ exports.sendProblemsStats = async (req, res) => {
         }
 
         // Send the problem IDs to the problem stats service
-        const response = await axios.post('http://problem_stats_service:4006/problems', {
-            problemIds
-        });
+        const response = await axios.post(url, {problemIds});
 
         // Assuming the response from the stats service contains useful statistics
         const statsResponse = response.data;

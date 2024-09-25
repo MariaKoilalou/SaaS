@@ -48,6 +48,7 @@ exports.solver = async (req, res) => {
 
             try {
                 const progressUpdate = JSON.parse(output);
+
                 const progress = progressUpdate.progress || 0;
 
                 // Check if the message contains the final result
@@ -74,29 +75,6 @@ exports.solver = async (req, res) => {
                     status: "raw",
                     rawOutput: output,
                     message: 'Solver raw output received'
-                }, `execution_updates_${executionId}`);
-            }
-        });
-
-        // Handle solver completion
-        solverProcess.on('close', (code) => {
-            if (code === 0) {
-                sendMessageToQueue({
-                    action: 'solver_completed',
-                    sessionId,
-                    problemType,
-                    status: "completed",
-                    message: 'Solver execution completed successfully',
-                    progress: 100
-                }, `execution_updates_${executionId}`);
-            } else {
-                sendMessageToQueue({
-                    action: 'solver_failed',
-                    sessionId,
-                    problemType,
-                    status: "failed",
-                    message: 'Solver process failed',
-                    error: `Solver process exited with non-zero code: ${code}`
                 }, `execution_updates_${executionId}`);
             }
         });
