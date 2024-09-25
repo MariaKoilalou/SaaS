@@ -14,7 +14,7 @@ exports.problems = async (req, res) => {
         console.log('Received Problem IDs:', problemIds);
 
         // Fetch executions from Manage Problem Service for the given problem IDs
-        const response = await axios.post('http://manage_problem_service:4004/executions', {
+        const response = await axios.post('http://manage_problems_service:4004/executions', {
             problemIds
         });
 

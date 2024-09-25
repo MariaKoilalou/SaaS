@@ -6,31 +6,28 @@ const { sendExecutionUpdateToQueue } = require('../utils/rabbitmq/publisher');
 const { consumeMessagesFromQueue } = require('../utils/rabbitmq/consumer');  // RabbitMQ consumer
 
 exports.getExecutionDetails = async (req, res) => {
-    try {
-        // Fetch all executions from the database
-        const executions = await models.Execution.findAll();
+    const { problemIds } = req.body; // Array of integers
 
-        // Check if any executions were found
-        if (!executions || executions.length === 0) {
-            return res.status(404).json({
-                message: 'No executions found'
-            });
+    try {
+        // Fetch executions by problemIds
+        const executions = await models.Execution.findAll({
+            where: {
+                problemId: problemIds  // Sequelize will handle arrays in the WHERE clause
+            }
+        });
+
+        // Check if executions is an array before returning it
+        if (!Array.isArray(executions)) {
+            return res.status(500).json({ message: 'Executions data is not an array' });
         }
 
-        // Send back the execution details to the Problem Stats Service
-        res.status(200).json({
-            message: 'Executions fetched successfully',
-            executions: executions // Sending all the execution data
-        });
-
+        res.status(200).json(executions);  // Return array of executions
     } catch (error) {
         console.error('Error fetching executions:', error);
-        res.status(500).json({
-            message: 'Failed to fetch execution details',
-            error: error.message
-        });
+        res.status(500).json({ message: 'Internal server error', error: error.message });
     }
 };
+
 
 // Function to receive and start execution
 exports.getProblem = async (req, res) => {

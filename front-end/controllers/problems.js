@@ -21,9 +21,6 @@ exports.getStats = async (req, res) => {
             sessionId: req.session.id,
         });
 
-        console.log('Received stats:', response.data.problems);
-
-
         // Assuming the stats are returned in response.data
         const problemStats = response.data;
 
@@ -31,7 +28,7 @@ exports.getStats = async (req, res) => {
         console.log('Received Problem Statistics:', problemStats);
 
         res.render('Statistics.ejs', {
-            stats: problemStats
+            stats: problemStats.stats
         });
 
     } catch (error) {

@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.post('/problems', manageProblemsController.getProblem);
 
-router.get('/executions', manageProblemsController.getExecutionDetails);
+router.post('/executions', manageProblemsController.getExecutionDetails);
 
 router.get('/executions/:executionId/status', manageProblemsController.getExecutionStatus);
 
