@@ -55,15 +55,18 @@ The application is built using a microservices architecture. Each service is res
 ## Deployment
 
 1. Clone Repository
+```
 git clone https://github.com/ntua/saas2024-54
 cd saas2024-54
+```
 
-
-2. Build Docker
+3. Build Docker
+```
 docker-compose up --build
+```
 
 
-3. The project runs on http/:localhost/:4007
+5. The project runs on http/:localhost/:4007
 
 
 ## License
