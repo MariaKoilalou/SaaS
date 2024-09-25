@@ -2,8 +2,10 @@ const sequelize = require('../utils/database'); // Assuming this exports a confi
 const initModels = require("../models/init-models");
 const models = initModels(sequelize);
 
+// Function to get the balance
 exports.getBalance = async (req, res) => {
-    const sessionId = req.query.sessionId;  // Get sessionId from query params
+    // Get sessionId from query params
+    const sessionId = req.query.sessionId;
 
     try {
         // Fetch the specific session by sessionId
@@ -23,6 +25,7 @@ exports.getBalance = async (req, res) => {
     }
 };
 
+// Function to buy credits
 exports.buyCredits = async (req, res) => {
     const creditsToAdd = req.body.credits;
     const sessionId = req.body.sessionId;
@@ -43,7 +46,7 @@ exports.buyCredits = async (req, res) => {
             console.log(`Session ${sessionId} not found, creating a new one.`);
             sessionData = await models.Session.create({
                 sid: sessionId,
-                expire: new Date(Date.now() + 24 * 60 * 60 * 1000),  // 24-hour expiration
+                expire: new Date(Date.now() + 24 * 60 * 60 * 1000),
                 data: JSON.stringify({ balance: 0 })
             });
             console.log('New session created:', sessionData);
@@ -59,12 +62,12 @@ exports.buyCredits = async (req, res) => {
 
         // Update session data with new balance
         sessionParsedData.balance = newBalance;
-        sessionData.data = JSON.stringify(sessionParsedData);  // Save back to session
-        await sessionData.save();  // Save updated session data
+        sessionData.data = JSON.stringify(sessionParsedData);
+        await sessionData.save();
 
         console.log('buy: Updated session balance saved. New Balance:', newBalance);
 
-        // Return success response
+
         return res.status(200).json({
             message: 'Credits added successfully.',
             creditsAdded: creditsToAdd,
@@ -79,7 +82,7 @@ exports.buyCredits = async (req, res) => {
     }
 };
 
-
+// Function to update credits
 exports.updateCredits = async (req, res) => {
     const { sessionId, newBalance } = req.body;
 
@@ -105,7 +108,7 @@ exports.updateCredits = async (req, res) => {
 
         // Save the updated balance back to session data
         sessionData.data = JSON.stringify(sessionParsedData);
-        await sessionData.save();  // Save updated session data to the database
+        await sessionData.save();
 
         console.log(`Balance for session ${sessionId} updated to ${newBalance}`);
 

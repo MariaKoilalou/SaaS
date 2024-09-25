@@ -1,5 +1,6 @@
 const axios = require('axios');
 
+//Function for problem submission
 exports.submit = async (req, res) => {
     try {
         const {
@@ -45,10 +46,9 @@ exports.submit = async (req, res) => {
             payload.capacity = capacity;
         }
 
-        // Log payload before sending
         console.log('Submitting problem to manage problem service:', payload);
 
-        // Simulate session balance deduction
+        // Session balance deduction
         const newBalance = sessionBalance - 1;
 
         const manageServiceUrl = 'http://manage_problems_service:4004/problems';
@@ -63,7 +63,7 @@ exports.submit = async (req, res) => {
 
             const executionId = manageResponse.data.executionId;
 
-            // Update balance in buy_credits_service
+            // Update balance in buy-credits-service
             const creditsServiceUrl = 'http://buy_credits_service:4002/update';
             await axios.post(creditsServiceUrl, {
                 sessionId,

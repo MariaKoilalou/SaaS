@@ -4,18 +4,18 @@ services:
     image: rabbitmq:management
     container_name: rabbitmq
     ports:
-      - "5672:5672"    # Main port for messaging
-      - "15672:15672"  # Management UI port
+      - "5672:5672"
+      - "15672:15672"
     networks:
       - my_network
     environment:
       - RABBITMQ_DEFAULT_USER=myuser
       - RABBITMQ_DEFAULT_PASS=mypassword
     healthcheck:
-      test: [ "CMD", "rabbitmqctl", "status" ]  # Command to check RabbitMQ status
-      interval: 30s  # How often to check the service's health
-      timeout: 10s   # The maximum amount of time to wait for the health check command to succeed
-      retries: 5     # How many times to retry before marking the service as unhealthy
+      test: [ "CMD", "rabbitmqctl", "status" ]  # Check RabbitMQ status
+      interval: 30s
+      timeout: 10s
+      retries: 5
       start_period: 30s
     restart: always
 
@@ -127,8 +127,8 @@ services:
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - JWT_SECRET=supersecretjwtkey12345
-      - RABBITMQ_HOST=rabbitmq   # Add RabbitMQ environment variable
-      - RABBITMQ_PORT=5672       # Add RabbitMQ environment variable
+      - RABBITMQ_HOST=rabbitmq   # RabbitMQ
+      - RABBITMQ_PORT=5672       # RabbitMQ
     networks:
       - my_network
     restart: always
@@ -171,8 +171,8 @@ services:
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - JWT_SECRET=supersecretjwtkey12345
-      - RABBITMQ_HOST=rabbitmq   # Add RabbitMQ environment variable
-      - RABBITMQ_PORT=5672       # Add RabbitMQ environment variable
+      - RABBITMQ_HOST=rabbitmq   # RabbitMQ
+      - RABBITMQ_PORT=5672       # RabbitMQ
     networks:
       - my_network
     restart: always
@@ -205,8 +205,8 @@ services:
       - SECRET_ENCRYPT=9a845c30be6838b5ea4db5343a71a234
       - SECRET_STRING_SERVICES=9a845c30be6838b5ea4db5343a71a234
       - JWT_SECRET=supersecretjwtkey12345
-      - RABBITMQ_HOST=rabbitmq   # Add RabbitMQ environment variable
-      - RABBITMQ_PORT=5672       # Add RabbitMQ environment variable
+      - RABBITMQ_HOST=rabbitmq   # RabbitMQ
+      - RABBITMQ_PORT=5672       # RabbitMQ
     networks:
       - my_network
     restart: always

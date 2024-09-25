@@ -1,5 +1,6 @@
 const Sequelize = require('sequelize');
 
+// Session class
 module.exports = function(sequelize, DataTypes) {
     return sequelize.define('Session', {
         sid: {

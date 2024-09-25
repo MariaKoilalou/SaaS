@@ -2,6 +2,7 @@ const session = require('express-session');
 const SequelizeStore = require('connect-session-sequelize')(session.Store);
 const sequelize = require('./database'); // Ensure this points to your shared database
 
+// Create Session Store
 const store = new SequelizeStore({
     db: sequelize,
     tableName: 'Session',
