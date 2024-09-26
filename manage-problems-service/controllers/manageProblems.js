@@ -5,6 +5,60 @@ const models = initModels(sequelize);
 const { sendExecutionUpdateToQueue } = require('../utils/rabbitmq/publisher');
 const { consumeMessagesFromQueue } = require('../utils/rabbitmq/consumer');  // RabbitMQ consumer
 
+exports.editExecution = async (req, res) => {
+    const { executionId, newExecutionData } = req.body;  // Assuming `executionId` and `newExecutionData` are passed in the body
+
+    try {
+        // Step 1: Delete the previous execution with the same executionId
+        const deletedExecution = await models.Execution.destroy({
+            where: { id: executionId }
+        });
+
+        if (!deletedExecution) {
+            return res.status(404).json({ message: 'Execution not found for the given ID' });
+        }
+
+        // Step 2: Create a new execution with the same executionId but different data
+        const newExecution = await models.Execution.create({
+            id: executionId,  // Reuse the same ID
+            ...newExecutionData  // Spread the new data into the new execution record
+        });
+
+        // Step 3: Return the newly created execution
+        res.status(201).json({
+            message: 'Execution successfully edited',
+            data: newExecution
+        });
+
+    } catch (error) {
+        console.error('Error editing execution:', error);
+        res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+// Controller to get execution details by executionId
+exports.getExecution = async (req, res) => {
+    const { executionId } = req.params;
+
+    try {
+        // Find execution by executionId in the database
+        const execution = await models.Execution.findOne({
+            where: { id: executionId }
+        });
+
+        if (!execution) {
+            return res.status(404).json({ message: 'Execution not found' });
+        }
+
+        // Return execution details as a response
+        res.status(200).json(execution);
+    } catch (error) {
+        console.error('Error fetching execution details:', error);
+        res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+
 exports.getExecutionDetails = async (req, res) => {
     const { problemIds } = req.body; // Array of integers
 

@@ -1,6 +1,26 @@
 const axios = require('axios');
 const { executionUpdates } = require('../utils/rabbitmq/consumer'); // Import the executionUpdates store
 
+
+exports.renderEditExecutionPage = async (req, res) => {
+    const { executionId } = req.params;
+
+    try {
+        // Call manage_problem_service to get execution details
+        const response = await axios.get(`http://manage_problems_service:4004/executions/${executionId}`);
+
+        if (response.data) {
+            // Render the EJS page with execution data
+            res.render('editExecution.ejs', { execution: response.data });
+        } else {
+            res.status(404).send('Execution not found');
+        }
+    } catch (error) {
+        console.error('Error fetching execution from manage_problem_service:', error);
+        res.status(500).send('Error fetching execution details');
+    }
+};
+
 exports.getStats = async (req, res) => {
     try {
         const url = `http://browse_problems_service:4003/stats`;
@@ -67,9 +87,6 @@ exports.showManageProblem = (req, res) => {
         metaData: executionData ? executionData.metaData : 'No metadata'
     });
 };
-
-
-
 
 exports.renderSubmitProblemForm = (req, res) => {
     console.log('Rendering form - session balance:', req.session.balance);

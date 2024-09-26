@@ -27,10 +27,11 @@
     </style>
 </head>
 <body>
+<!-- Header with logo and system info -->
 <header>
-    <div class="container">
+    <div class="container d-flex justify-content-between align-items-center">
         <img id="small_logo" src="/assets/img/small_logo.png" alt="solveME logo" class="img-fluid">
-        <p>System info: date/time, health, etc.</p>
+        <p id="system-info">System info: <span id="date-time"></span>, Health: <span id="system-health">Checking...</span></p>
     </div>
 </header>
 
@@ -189,5 +190,34 @@
     }
 
 </script>
+
+<script>
+    // Function to format and display current date and time
+    function updateDateTime() {
+        const dateTimeElement = document.getElementById('date-time');
+        const now = new Date();
+        const formattedTime = now.toLocaleString();  // Localized date and time string
+        dateTimeElement.textContent = formattedTime;
+    }
+
+    // Update date and time every second
+    setInterval(updateDateTime, 1000);
+    updateDateTime();  // Call immediately to set on load
+
+    // Optionally, system health data can be fetched from backend (e.g., CPU/Memory usage)
+    async function fetchSystemHealth() {
+        try {
+            const response = await fetch('/system/health');
+            const data = await response.json();
+            document.getElementById('system-health').textContent = data.healthStatus;
+        } catch (error) {
+            document.getElementById('system-health').textContent = 'Unavailable';
+        }
+    }
+
+    // Fetch system health on page load
+    fetchSystemHealth();
+</script>
+
 </body>
 </html>

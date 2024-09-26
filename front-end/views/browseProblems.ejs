@@ -51,9 +51,9 @@
 <body>
 <!-- Header with logo and system info -->
 <header>
-    <div class="container">
+    <div class="container d-flex justify-content-between align-items-center">
         <img id="small_logo" src="/assets/img/small_logo.png" alt="solveME logo" class="img-fluid">
-        <p>System info: date/time, health, etc.</p>
+        <p id="system-info">System info: <span id="date-time"></span>, Health: <span id="system-health">Checking...</span></p>
     </div>
 </header>
 
@@ -61,7 +61,7 @@
 
     <!-- Button to show graph statistics -->
     <div class="d-flex justify-content-end">
-        <a href="/problems/stats" class="btn btn-primary btn-stats">Show Graph Statistics</a>
+        <a href="/problems/stats" id="btn-stats" class="btn btn-primary btn-stats">Show Graph Statistics</a>
     </div>
 
     <h2>Browse Problems</h2>
@@ -118,6 +118,49 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.10.2/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 
+<script>
+    // JavaScript to check if there are problems in the table and enable/disable the "Show Graph Statistics" button
+    document.addEventListener('DOMContentLoaded', function() {
+        const problemTable = document.getElementById('problem-list');
+        const problemRows = problemTable.querySelectorAll('tr');
+        const btnStats = document.getElementById('btn-stats');
+
+        // If there are no problem rows, disable the button
+        if (problemRows.length === 0) {
+            btnStats.classList.add('disabled'); // Bootstrap 'disabled' class
+            btnStats.setAttribute('aria-disabled', 'true');
+            btnStats.style.pointerEvents = 'none'; // Prevent clicking
+        }
+    });
+</script>
+
+<script>
+    // Function to format and display current date and time
+    function updateDateTime() {
+        const dateTimeElement = document.getElementById('date-time');
+        const now = new Date();
+        const formattedTime = now.toLocaleString();  // Localized date and time string
+        dateTimeElement.textContent = formattedTime;
+    }
+
+    // Update date and time every second
+    setInterval(updateDateTime, 1000);
+    updateDateTime();  // Call immediately to set on load
+
+    // Optionally, system health data can be fetched from backend (e.g., CPU/Memory usage)
+    async function fetchSystemHealth() {
+        try {
+            const response = await fetch('/system/health');
+            const data = await response.json();
+            document.getElementById('system-health').textContent = data.healthStatus;
+        } catch (error) {
+            document.getElementById('system-health').textContent = 'Unavailable';
+        }
+    }
+
+    // Fetch system health on page load
+    fetchSystemHealth();
+</script>
 
 </body>
 </html>
