@@ -6,7 +6,6 @@ exports.renderEditExecutionPage = async (req, res) => {
     const { executionId } = req.params;
 
     try {
-        // Call manage_problem_service to get execution details
         const response = await axios.get(`http://manage_problems_service:4004/executions/${executionId}`);
 
         if (response.data) {
@@ -78,7 +77,6 @@ exports.showManageProblem = (req, res) => {
     // Get the latest execution update for the given executionId from the in-memory store
     const executionData = executionUpdates[executionId];
 
-    // Render the manage problem page, passing the execution data to the EJS template
     res.render('manageProblem.ejs', {
         executionId: executionId,
         status: executionData ? executionData.status : 'Pending',
@@ -142,7 +140,6 @@ exports.handleSubmitProblem = async (req, res) => {
             };
         }
 
-        // Send the problem to submit_problem_service
         const response = await axios.post(submitProblemUrl, payload);
 
         if (response.status !== 200) {
@@ -157,11 +154,9 @@ exports.handleSubmitProblem = async (req, res) => {
 
             console.log('Received executionId from submit_problem_service:', executionId);
 
-            // Deduct 1 from session balance
             req.session.balance -= 1;
             await req.session.save();  // Save updated balance in session
 
-            // Redirect to manage page with the executionId
             return res.redirect(`update/manage/${executionId}`);  // Pass the executionId to the manage page
         }
     } catch (error) {
@@ -190,7 +185,6 @@ exports.browseProblems = async (req, res) => {
 
         console.log('Received problems:', response.data.problems);
 
-        // Render the page with problem data
         res.render('browseProblems.ejs', {
             problems: response.data.problems,
             pagination: response.data.pagination,
@@ -202,25 +196,6 @@ exports.browseProblems = async (req, res) => {
         res.redirect('/'); // Redirect the user to a default or error page
     }
 };
-
-exports.getProblemStatus = async (req, res) => {
-    const url = `http://browse_problems_service:4003/status`; // The Browse Problems Service status endpoint
-
-    try {
-        // Send a GET request to fetch status updates for the session
-        const response = await axios.get(url, {
-            params: { sessionId: req.session.id }  // Pass sessionId as a query parameter
-        });
-
-        // Send the status updates back to the frontend (browser) as JSON
-        res.json(response.data);
-
-    } catch (error) {
-        console.error('Error fetching status updates:', error.message);
-        res.status(500).json({ message: 'Error fetching problem status updates.' });
-    }
-};
-
 
 exports.deleteProblem = async (req, res) => {
     const problemId = req.params.problemId;

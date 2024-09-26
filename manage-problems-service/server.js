@@ -3,7 +3,6 @@ const app = require('./app'); // Import the Express app
 const sequelize = require("./utils/database");
 const initModels = require("./models/init-models");
 const { consumeMessagesFromQueue } = require('./utils/rabbitmq/consumer'); // Import RabbitMQ consumer logic
-const { sendMessageToQueue } = require('./utils/rabbitmq/publisher'); // Import RabbitMQ publisher logic
 
 consumeMessagesFromQueue();
 

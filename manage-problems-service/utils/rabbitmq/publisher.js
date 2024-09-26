@@ -16,22 +16,18 @@ function sendExecutionUpdateToQueue(executionId, update) {
                 throw err;
             }
 
-            // Define the queue where execution updates will be sent
             const queue = 'frontend_updates_queue'; // Common queue for execution updates
 
-            // Ensure the queue exists and is durable
             channel.assertQueue(queue, { durable: true });
 
             // Construct the message
             const message = {
                 executionId,
-                ...update  // spread update details (status, progress, result, metaData)
+                ...update
             };
 
-            // Convert the message to a JSON string
             const msg = JSON.stringify(message);
 
-            // Send the message to the queue
             channel.sendToQueue(queue, Buffer.from(msg), { persistent: true });
             console.log(` [x] Sent execution update ${msg} to ${queue}`);
 

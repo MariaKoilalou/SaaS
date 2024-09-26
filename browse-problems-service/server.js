@@ -6,7 +6,6 @@ const models = initModels(sequelize);
 
 const port = process.env.PORT || 4003;
 
-// Create an HTTP server from the Express app
 const server = http.createServer(app);
 
 // Database and schema setup

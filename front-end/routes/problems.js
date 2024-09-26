@@ -20,8 +20,6 @@ router.post('/submit', problemsController.handleSubmitProblem);
 
 router.get('/show', problemsController.browseProblems);
 
-router.get('/status', problemsController.getProblemStatus);
-
 router.get('/stats', problemsController.getStats);
 
 router.get('/update/manage/:executionId', problemsController.showManageProblem);

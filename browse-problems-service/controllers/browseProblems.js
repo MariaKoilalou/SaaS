@@ -9,7 +9,6 @@ exports.sendProblemsStats = async (req, res) => {
     try {
         const sessionId = req.body.sessionId;
         const url = `http://problem_stats_service:4006/problems`;
-        console.log('Received from browse problems service for id:', sessionId);
 
         if (!sessionId) {
             return res.status(400).json({
@@ -24,9 +23,6 @@ exports.sendProblemsStats = async (req, res) => {
 
         const problemIds = problems.map(problem => problem.id);
 
-        // Log the problem IDs to confirm
-        console.log('Filtered Problem IDs for session:', sessionId, problemIds);
-
         if (!problemIds || problemIds.length === 0) {
             return res.status(404).json({
                 message: 'No problems found for the given session ID'
@@ -36,13 +32,10 @@ exports.sendProblemsStats = async (req, res) => {
         // Send the problem IDs to the problem stats service
         const response = await axios.post(url, {problemIds});
 
-        // Assuming the response from the stats service contains useful statistics
         const statsResponse = response.data;
 
-        // Log the stats response to confirm it was received correctly
         console.log('Stats Service Response:', statsResponse);
 
-        // Send a success message along with the stats response back to the client
         res.status(200).json({
             message: 'Problem statistics successfully retrieved',
             stats: statsResponse // The response data from the stats service
@@ -56,8 +49,6 @@ exports.sendProblemsStats = async (req, res) => {
         });
     }
 };
-
-
 
 exports.show = async (req, res) => {
     const sessionId = req.body.sessionId;
@@ -138,35 +129,6 @@ exports.show = async (req, res) => {
     }
 };
 
-// exports.updateProblem = async (req, res) => {
-//     // const { status, progress, result } = req.body;
-//     const problemId = req.params.problemId; // Extract problemId from URL parameters
-//
-//     try {
-//         // Find the problem in the database
-//         const problem = await models.Problem.findOne({ where: { id: problemId } });
-//
-//         if (!problem) {
-//             return res.status(404).json({ message: 'Problem not found.' });
-//         }
-//
-//         // Update the problem's status, progress, and result in the database
-//         // await problem.update({
-//         //     status: status,
-//         //     progress: progress || null,
-//         //     result: result || null
-//         // });
-//
-//         console.log(`Problem ${problemId} updated successfully`);
-//         return res.status(200).json({ message: `Problem ${problemId} updated successfully.` });
-//
-//     } catch (error) {
-//         console.error(`Error updating problem ${problemId}:`, error.message);
-//         return res.status(500).json({ message: 'Internal server error. Unable to update the problem.' });
-//     }
-// };
-
-
 exports.getProblem = async (req, res) => {
     const sessionId = req.body.sessionId;
     const newBalance = req.body.newBalance;
@@ -236,21 +198,4 @@ exports.deleteProblem = async (req, res) => {
     }
 };
 
-exports.getStatus = async (req, res) => {
-    const sessionId = req.session.id; // Use the sessionId to filter problems
-
-    try {
-        // Fetch all problems for the session
-        const problems = await models.Problem.findAll({
-            where: { sessionId: sessionId },
-        });
-
-        // Send the problems as a JSON response
-        return res.status(200).json({ problems });
-
-    } catch (error) {
-        console.error('Error fetching problem status updates:', error);
-        return res.status(500).json({ message: 'Internal server error. Unable to fetch problem updates.' });
-    }
-};
 

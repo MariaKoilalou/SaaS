@@ -2,7 +2,6 @@ const axios = require('axios');
 
 exports.layout = async (req, res) => {
     try {
-        // URL of the buy_credits_service to get the session balance
         const url = `http://buy_credits_service:4002/balance`;
 
         let balance = 0;

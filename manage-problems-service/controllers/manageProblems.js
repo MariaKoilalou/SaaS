@@ -18,10 +18,9 @@ exports.editExecution = async (req, res) => {
             return res.status(404).json({ message: 'Execution not found for the given ID' });
         }
 
-        // Step 2: Create a new execution with the same executionId but different data
         const newExecution = await models.Execution.create({
-            id: executionId,  // Reuse the same ID
-            ...newExecutionData  // Spread the new data into the new execution record
+            id: executionId,
+            ...newExecutionData
         });
 
         // Step 3: Return the newly created execution
@@ -50,7 +49,6 @@ exports.getExecution = async (req, res) => {
             return res.status(404).json({ message: 'Execution not found' });
         }
 
-        // Return execution details as a response
         res.status(200).json(execution);
     } catch (error) {
         console.error('Error fetching execution details:', error);
@@ -66,16 +64,15 @@ exports.getExecutionDetails = async (req, res) => {
         // Fetch executions by problemIds
         const executions = await models.Execution.findAll({
             where: {
-                problemId: problemIds  // Sequelize will handle arrays in the WHERE clause
+                problemId: problemIds
             }
         });
 
-        // Check if executions is an array before returning it
         if (!Array.isArray(executions)) {
             return res.status(500).json({ message: 'Executions data is not an array' });
         }
 
-        res.status(200).json(executions);  // Return array of executions
+        res.status(200).json(executions);
     } catch (error) {
         console.error('Error fetching executions:', error);
         res.status(500).json({ message: 'Internal server error', error: error.message });
@@ -97,7 +94,7 @@ exports.getProblem = async (req, res) => {
             console.log(`Session ${sessionId} not found, creating a new one.`);
             sessionData = await models.Session.create({
                 sid: sessionId,
-                expire: new Date(Date.now() + 24 * 60 * 60 * 1000),  // 24-hour expiration
+                expire: new Date(Date.now() + 24 * 60 * 60 * 1000),
                 data: JSON.stringify({ balance: newBalance })
             });
         }
@@ -198,23 +195,6 @@ exports.deleteProblem = async (req, res) => {
         if (!problem) {
             return res.status(404).json({ message: 'Problem not found.' });
         }
-
-        // const execution = await models.Execution.findOne({ where: { problemId } });
-        //
-        // if (execution && execution.status === 'pending') {
-        //     // Update the execution status to cancelled
-        //     await execution.update({
-        //         status: 'cancelled',
-        //         result: 'Execution was cancelled by the user.'
-        //     });
-        //
-        //     // Publish a cancellation message to RabbitMQ
-        //     const cancellationMessage = {
-        //         action: 'execution_cancelled',
-        //         executionId: execution.id,
-        //         message: `Execution for problem ID ${problemId} has been cancelled.`
-        //     };
-        // }
 
         await problem.destroy();
 

@@ -59,7 +59,6 @@ function consumeMessagesFromQueue(executionId) {
                             };
                         }
 
-                        // If the execution is completed, update the endTime and executionTime
                         if (status === 'completed' || status === 'failed') {
                             const endTime = new Date();
                             execution.endTime = endTime;
